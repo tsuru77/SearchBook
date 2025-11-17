@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 version: "3.9"
 
 services:
@@ -49,4 +50,3 @@ services:
 
 volumes:
   es_data:
-

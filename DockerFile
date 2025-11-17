@@ -1,0 +1,17 @@
+# (1)!
+FROM python:3.14.0
+
+# (2)!
+WORKDIR /code
+
+# (3)!
+COPY ./fastapi/requirements.txt /code/requirements.txt
+
+# (4)!
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+
+# (5)!
+COPY ./fastapi/app /code/app
+
+# (6)!
+CMD ["fastapi", "run", "app/main.py", "--port", "80"]

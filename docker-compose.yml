@@ -8,11 +8,10 @@ services:
    volumes:
      - nginx_data:/usr/share/nginx/html
      - ./nginx.conf:/etc/nginx/nginx.conf
-
-fast-api:
-  image: fast-api
-  build:
-    dockerfile: ./Dockerfile
+  fast-api:
+    image: fast-api
+    build:
+      dockerfile: ./Dockerfile
 
 
 volumes:

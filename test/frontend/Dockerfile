@@ -1,74 +1,24 @@
 # Multi-stage Dockerfile for React + Vite Frontend
 
-# =====================================
-# Stage 1: Build (Vite build)
-# =====================================
-FROM node:20-alpine as builder
-
+# Stage 1: Dependencies
+FROM node:20-alpine as deps
 WORKDIR /app
-
-# Copy package files first
 COPY package*.json ./
-
-# Install all dependencies (including dev, needed for build)
 RUN npm ci
 
-# Copy source code
+# Stage 2: Build (Vite build)
+FROM node:20-alpine as build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Build with Vite
-# Replace API_URL placeholder if provided
-ARG API_URL=http://localhost/api
-RUN sed -i "s|http://localhost:8000|${API_URL}|g" vite.config.ts src/lib/api.ts || true
-
-# Build application
+ARG VITE_API_BASE_URL=http://backend:8000/api
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
 
-# =====================================
-# Stage 2: Runtime (Nginx serving static files)
-# =====================================
+# Stage 3: Runtime (Nginx serving static files)
 FROM nginx:1.25-alpine
-
-# Copy built app to Nginx
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Copy Nginx config for SPA (all routes → index.html)
-RUN cat > /etc/nginx/conf.d/default.conf << 'EOF'
-server {
-    listen 80;
-    server_name _;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # SPA: route tous les 404 vers index.html
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Cache static assets (js, css, images)
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # No cache for HTML
-    location ~* \.html$ {
-        expires -1;
-        add_header Cache-Control "no-cache, no-store, must-revalidate";
-    }
-
-    # Gzip compression
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-    gzip_min_length 256;
-}
-EOF
-
-# Health check
-HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
-    CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
-
-# Expose port
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /usr/share/nginx/html
+COPY --from=build /app/dist .
 EXPOSE 80
-
-# Nginx runs by default
+CMD ["nginx", "-g", "daemon off;"]

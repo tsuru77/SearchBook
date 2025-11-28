@@ -35,7 +35,7 @@ COPY --from=builder /root/.local /root/.local
 
 # Copy application code
 COPY ./app ./app
-COPY ./main.py .
+COPY ./requirements.txt .
 
 # Set environment
 ENV PATH=/root/.local/bin:$PATH \

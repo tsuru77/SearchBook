@@ -7,11 +7,11 @@ FROM node:20-alpine as builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* yarn.lock* ./
+# Copy package files first
+COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --omit=dev
+# Install all dependencies (including dev, needed for build)
+RUN npm ci
 
 # Copy source code
 COPY . .

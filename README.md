@@ -75,6 +75,14 @@ docker-compose exec backend bash
 python ingestion/load_books.py --source gutenberg --start-id 1 --limit 10
 ```
 
+### Full Corpus (Project Requirement)
+To meet the project requirement of a minimum library size of 1664 books:
+
+```bash
+# Load 1664 books from Gutenberg
+python ingestion/load_books.py --source gutenberg --start-id 1 --limit 1664 --phase all
+```
+
 ### Ingestion Phases
 The ingestion process is split into two phases for flexibility:
 

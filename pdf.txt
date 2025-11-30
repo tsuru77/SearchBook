@@ -1,0 +1,53 @@
+1 L’´enonc´e du projet 3 webapp
+Il s’agit de proposer une application web/mobile de moteur de recherche de document dans une biblioth`eque de livres
+sous format textuel. Pour cela, la premi`ere ´etape est de s’occuper de la couche data du projet, i.e. la construction d’une
+biblioth`eque personnelle de livres, stock´es sous forme de documents textuels. La taille minimum de la biblioth`eque
+doit ˆetre 1664 livres. La taille minimum de chaque livre doit ˆetre 10000 (dix mille) mots. Dans un second temps, il
+s’agit de construire une application web/mobile (couches serveur et client) afin de munir sa biblioth`eque d’un moteur de
+recherche. Chaque groupe est libre de d´eterminer la pr´esentation frontend et les userstory de son application, cependant,
+les fonctionnalit´es principales de l’application doivent obligatoirement comprendre :
+— Une fonctionnalit´e explicite de “Recherche” : Recherche de livre par mot-clef. A la suite d’une entr´ee texte S
+de l’utilisateur, l’application retourne la liste de tous les documents textuels dont la table de l’indexage contient la
+chaˆıne de caract`eres S.
+— Une fonctionnalit´e explicite de “Recherche avanc´ee” : Recherche dite “avanc´ee” de livre par RegEx. A la suite
+d’une entr´ee texte RegEx de l’utilisateur, l’application retourne : soit la liste de tous les documents textuels dont
+la table de l’indexage contient une chaˆıne de caract`eres S qui v´erifie l’expression r´eguli`ere RegEx ; soit la liste
+de tous les documents textuels dont le contenu textuel contient une chaˆıne de caract`eres S qui v´erifie l’expression
+r´eguli`ere RegEx (attention `a la d´egradation en performance).
+— Une fonctionnalit´e implicite de classement : Classement des r´eponses des deux fonctionnalit´es de recherche
+pr´ec´edentes. A la suite d’une r´eponse `a la fonctionnalit´e recherche, l’application retourne la liste des documents
+tri´ee par un certain crit`ere de pertinence : par nombre d’occurrences du mot-clef dans le document ; par indice de
+centralit´e d´ecroissant dans le graphe de Jaccard, et cetera. Le crit`ere de centralit´e est laiss´e libre `a chaque groupe
+d’interpr´eter. Cependant, il est obligatoire d’utiliser au moins un crit`ere parmi les trois indices vu en cours, `a savoir
+closeness, betweenness, ou pagerank. Concernant l’indice de centralit´e utilis´e, il est ´egalement important de bien
+le d´ecrire dans le rapport. On veillera en particulier `a expliciter la d´efinition, le calcul, ainsi que le r´esultat de cet
+indice sur des extraits pertinents de quelques livres parmi les > 1664 livres pr´esents dans la base de donn´ees.
+
+— Une fonctionnalit´e implicite de suggestion : Suggestion de r´eponses similaires `a la derni`ere recherche. A la suite
+d’une r´eponse `a la fonctionnalit´e recherche, l’application retourne ´egalement : soit la liste des sommets dans le
+graphe de Jaccard qui sont voisins avec les deux ou trois documents textuels les plus pertinents qui contiennent le
+mot-clef ; soit la liste des documents textuels les plus choisis (les plus cliqu´es par d’autres utilisateurs) parmi les
+sommets dans le graphe de Jaccard qui sont voisins avec les deux ou trois documents textuels les plus pertinents qui
+contiennent le mot-clef ; soit une autre liste suivant une strat´egie sp´ecifique qu’on expliquera bien dans le rapport.
+Le rendu de ce projet est avant tout une application web/mobile. Il est donc important lors de la d´emonstration (cf.
+pr´esentation orale ou vid´eo pitch d´ecrite ci-dessous) que l’application web/mobile en question fonctionnent sur plusieurs
+machines clientes en mˆeme temps (laptops, smartphones, etc).
+Un effort particulier doit ˆetre mis sur la phase de test, la r´edaction du rapport, et la pr´esentation orale du projet. Il y
+aura ainsi trois notations distinctes pour le rendu de ce projet : une note pour la r´ealisation (≈ 30% de la note totale du
+projet) ; une note pour le rapport (≈ 40%) ; et une note pour la pr´esentation orale du projet (≈ 30%).
+Rapport : On veillera `a expliciter les points suivants, pour chaque algorithme impl´ement´e (y compris les algorithmes
+d´ecrits pendant les s´eances de cours tels de ceux dans le livre Aho-Ullman, algorithme KMP, ceux de Jaccard, closeness,
+betweenness ou pagerank) :
+— d´efinition du probl`eme et la structure de donn´ees utilis´ee.
+— analyse et pr´esentation th´eorique des algorithmes connus dans la litt´erature.
+— argumentation concise appuyant toute appr´eciation, am´elioration, ou critique `a propos de ces algorithmes existants
+dans la litt´erature.
+— partie test : m´ethode d’obtention des testbeds. En particulier, il est important de citer la provenance des fichiers
+sources, e.g. pour les documents textuels.
+— test de performance : mieux vaut privil´egier les courbes, diagrammes bˆaton (moyenne + ´ecart type) et diagrammes
+de fr´equence, plutˆot qu’exhiber les colonnes de chiffre sans fins...
+— une discussion sur les r´esultats de test de performance est toujours la tr`es bienvenue.
+— pr´esenter ´egalement les tests d’utilisateur et test de pertinence, s’ils ont eu lieu.
+— conclusion et perspectives sur ce probl`eme de moteur de recherche de biblioth`eque.
+Il est prudent d’avoir entre 10 et 15 pages pour un rapport avec un contenu moyen. Le nombre de pages recommand´e
+pour ce rapport est 12 pages. Il convient de bien respecter cette limitation : les pages 16+ ne seront pas lues !

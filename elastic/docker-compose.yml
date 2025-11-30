@@ -1,0 +1,51 @@
+# version: "3.9"
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=changeme
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:9.2.0
+  #   depends_on:
+  #     - elasticsearch
+  #   environment:
+  #     - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+  #     - ELASTICSEARCH_USERNAME=elastic
+  #     - ELASTICSEARCH_PASSWORD=changeme
+  #   ports:
+  #     - "5601:5601"
+  backend:
+    build:
+      context: ./backend
+    # command: uvicorn app.main:app --host 0.0.0.0 --port 80 --reload
+    environment:
+      - SEARCHBOOK_ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - SEARCHBOOK_ELASTICSEARCH_USERNAME=elastic
+      - SEARCHBOOK_ELASTICSEARCH_PASSWORD=changeme
+    depends_on:
+      - elasticsearch
+    # ports:
+    #   - "8000:80"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8000/api
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  es_data:

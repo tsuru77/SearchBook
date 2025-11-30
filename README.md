@@ -44,3 +44,9 @@ docker compose up --build
 Frontend served at http://localhost:8080, backend at http://localhost:8000, Elasticsearch at http://localhost:9200.
 
 More detailed instructions will be documented as the implementation evolves.
+
+
+recherche regex:
+https://fr.wikipedia.org/wiki/Okapi_BM25
+https://fr.wikipedia.org/wiki/Indice_et_distance_de_Jaccard
+https://en.wikipedia.org/wiki/Closeness_(mathematics)

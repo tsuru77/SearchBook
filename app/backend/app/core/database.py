@@ -3,7 +3,7 @@
 import psycopg2
 import psycopg2.extras
 from contextlib import contextmanager
-from typing import Generator
+from typing import Generator, Any
 
 from app.core.config import settings
 
@@ -33,7 +33,7 @@ def get_db_cursor(commit: bool = False) -> Generator:
         conn.close()
 
 
-def execute_query(query: str, params: tuple = (), commit: bool = False):
+def execute_query(query: str, params: tuple = (), commit: bool = False) -> Any:
     """Execute a single query."""
     with get_db_cursor(commit=commit) as cursor:
         cursor.execute(query, params)
@@ -42,14 +42,14 @@ def execute_query(query: str, params: tuple = (), commit: bool = False):
         return cursor.fetchall()
 
 
-def execute_query_one(query: str, params: tuple = ()):
+def execute_query_one(query: str, params: tuple = ()) -> Any:
     """Execute a query and return a single row."""
     with get_db_cursor() as cursor:
         cursor.execute(query, params)
         return cursor.fetchone()
 
 
-def execute_query_all(query: str, params: tuple = ()):
+def execute_query_all(query: str, params: tuple = ()) -> list:
     """Execute a query and return all rows."""
     with get_db_cursor() as cursor:
         cursor.execute(query, params)

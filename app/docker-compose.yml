@@ -1,38 +1,40 @@
 # version: "3.9"
 
 services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.0
+  postgres:
+    image: postgres:16-alpine
+    env_file:
+      - .env
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=true
-      - ELASTIC_PASSWORD=changeme
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
-      - "9200:9200"
+      - "5432:5432"
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # kibana:
-  #   image: docker.elastic.co/kibana/kibana:9.2.0
-  #   depends_on:
-  #     - elasticsearch
-  #   environment:
-  #     - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-  #     - ELASTICSEARCH_USERNAME=elastic
-  #     - ELASTICSEARCH_PASSWORD=changeme
-  #   ports:
-  #     - "5601:5601"
   backend:
     build:
       context: ./backend
     # command: uvicorn app.main:app --host 0.0.0.0 --port 80 --reload
+    env_file:
+      - .env
     environment:
-      - SEARCHBOOK_ELASTICSEARCH_HOST=http://elasticsearch:9200
-      - SEARCHBOOK_ELASTICSEARCH_USERNAME=elastic
-      - SEARCHBOOK_ELASTICSEARCH_PASSWORD=changeme
+      - SEARCHBOOK_DB_HOST=${SEARCHBOOK_DB_HOST}
+      - SEARCHBOOK_DB_PORT=${SEARCHBOOK_DB_PORT}
+      - SEARCHBOOK_DB_NAME=${SEARCHBOOK_DB_NAME}
+      - SEARCHBOOK_DB_USER=${SEARCHBOOK_DB_USER}
+      - SEARCHBOOK_DB_PASSWORD=${SEARCHBOOK_DB_PASSWORD}
     depends_on:
-      - elasticsearch
+      postgres:
+        condition: service_healthy
     # ports:
     #   - "8000:80"
 
@@ -40,11 +42,13 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_BASE_URL: http://localhost:8000/api
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    env_file:
+      - .env
     depends_on:
       - backend
     ports:
       - "8080:80"
 
 volumes:
-  es_data:
+  postgres_data:

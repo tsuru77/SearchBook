@@ -1,0 +1,4 @@
+requests
+psycopg2-binary  # Version binaire pour plus de facilité
+nltk
+networkx

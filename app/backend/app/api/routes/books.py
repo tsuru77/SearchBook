@@ -8,7 +8,7 @@ router = APIRouter()
 
 @router.get("/books/{book_id}", response_model=BookResponse)
 async def get_book(
-    book_id: str = Path(description="Document identifier in Elasticsearch"),
+    book_id: str = Path(description="Book ID from database"),
 ) -> BookResponse:
     try:
         return await books_service.get_book(book_id=book_id)

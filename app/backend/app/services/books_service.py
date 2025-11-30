@@ -1,9 +1,9 @@
-from fastapi import status
-from fastapi.concurrency import run_in_threadpool
+"""Books service for fetching book details from PostgreSQL."""
 
-from app.core.config import settings
+from fastapi import status
+
+from app.core.database import execute_query_one
 from app.schemas.books import BookResponse
-from app.services.elasticsearch import get_elasticsearch_client
 
 
 class BookServiceError(Exception):
@@ -14,25 +14,28 @@ class BookServiceError(Exception):
 
 
 async def get_book(book_id: str) -> BookResponse:
-    client = get_elasticsearch_client()
+    """Fetch a single book by ID."""
     try:
-        doc = await run_in_threadpool(
-            client.get,
-            index=settings.elasticsearch_index,
-            id=book_id,
+        book = execute_query_one(
+            "SELECT id, title, author, text, word_count FROM books WHERE id = %s",
+            (int(book_id),)
         )
-    except Exception as exc:  # noqa: BLE001
-        raise BookServiceError("Book not found", status.HTTP_404_NOT_FOUND) from exc
-
-    source = doc.get("_source", {}) or {}
+    except ValueError:
+        raise BookServiceError("Invalid book ID", status.HTTP_400_BAD_REQUEST)
+    except Exception as exc:
+        raise BookServiceError(f"Database error: {str(exc)}", status.HTTP_500_INTERNAL_SERVER_ERROR) from exc
+    
+    if not book:
+        raise BookServiceError("Book not found", status.HTTP_404_NOT_FOUND)
+    
     return BookResponse(
-        id=doc.get("_id"),
-        title=source.get("title"),
-        author=source.get("author"),
-        text=source.get("text"),
-        word_count=source.get("word_count"),
-        centrality_score=source.get("centrality_score"),
-        metadata=source.get("metadata", {}),
+        id=str(book['id']),
+        title=book['title'],
+        author=book['author'],
+        text=book['text'],
+        word_count=book['word_count'],
+        centrality_score=None,
+        metadata={},
     )
 
 

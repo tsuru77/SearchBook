@@ -19,7 +19,7 @@ async def search_books(
 
 @router.get("/search/advanced", response_model=AdvancedSearchResponse)
 async def regex_search_books(
-    regex: str = Query(min_length=2, description="Elasticsearch-compatible regular expression"),
+    regex: str = Query(min_length=2, description="Python regex pattern"),
     size: int = Query(default=10, ge=1, le=50),
 ) -> AdvancedSearchResponse:
     try:

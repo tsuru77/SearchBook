@@ -10,9 +10,10 @@ router = APIRouter()
 async def search_books(
     query: str = Query(min_length=1, description="Full-text query string"),
     size: int = Query(default=10, ge=1, le=50),
+    sort_by: str = Query(default='relevance', regex='^(relevance|centrality)$', description="Sort criteria"),
 ) -> SearchResponse:
     try:
-        return await search_service.search_books(query=query, size=size)
+        return await search_service.search_books(query=query, size=size, sort_by=sort_by)
     except search_service.SearchServiceError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
 

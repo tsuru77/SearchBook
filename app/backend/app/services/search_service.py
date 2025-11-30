@@ -24,11 +24,11 @@ def _tokenize(text: str) -> list[str]:
     return tokens
 
 
-async def search_books(query: str, size: int) -> SearchResponse:
+async def search_books(query: str, size: int, sort_by: str = 'relevance') -> SearchResponse:
     """Full-text search using BM25 ranking."""
     try:
-        # Fetch all books
-        all_books = execute_query_all("SELECT id, title, author, content AS text, word_count, image_url FROM books ORDER BY id")
+        # Fetch all books including closeness_score
+        all_books = execute_query_all("SELECT id, title, author, content AS text, word_count, image_url, closeness_score FROM books ORDER BY id")
         
         if not all_books:
             return SearchResponse(total=0, results=[])
@@ -41,25 +41,32 @@ async def search_books(query: str, size: int) -> SearchResponse:
         query_tokens = _tokenize(query)
         scores = bm25.get_scores(query_tokens)
         
-        # Create ranked results
-        ranked_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
-        
+        # Create results list first
         results: list[SearchResult] = []
-        for idx in ranked_indices[:size]:
-            if scores[idx] > 0:  # Only include books with non-zero score
-                book = all_books[idx]
+        for idx, book in enumerate(all_books):
+            if scores[idx] > 0:
                 text = book['text']
                 snippet = text[:280] if text else ""
-                
                 results.append(SearchResult(
                     id=str(book['id']),
                     title=book['title'],
                     author=book['author'],
                     score=scores[idx],
-                    centrality_score=None,
+                    centrality_score=book.get('closeness_score'),
                     image_url=book.get('image_url'),
                     snippet=snippet,
                 ))
+
+        # Sort based on criteria
+        if sort_by == 'centrality':
+            # Sort by centrality (descending), then by relevance (descending)
+            results.sort(key=lambda x: (x.centrality_score or 0, x.score), reverse=True)
+        else:
+            # Default: Sort by relevance (BM25 score)
+            results.sort(key=lambda x: x.score, reverse=True)
+        
+        # Apply limit after sorting
+        results = results[:size]
         
         return SearchResponse(total=len(results), results=results)
     

@@ -15,6 +15,7 @@ export function HomeSearchView() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [sortBy, setSortBy] = useState<'relevance' | 'centrality'>('relevance');
 
   // Load suggestions on mount (popular books)
   useEffect(() => {
@@ -26,7 +27,7 @@ export function HomeSearchView() {
     setSearchError(null);
     setIsSearching(true);
     try {
-      const response = await api.search(value);
+      const response = await api.search(value, 10, sortBy);
       setResults(response.results);
       const topResultId = response.results[0]?.id ?? null;
       setSelectedBookId(topResultId);
@@ -67,6 +68,27 @@ export function HomeSearchView() {
       </header>
 
       <SearchBar onSubmit={handleSearch} />
+
+      <div className="controls-row" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+          Sort by:
+          <select
+            value={sortBy}
+            onChange={(e) => {
+              const newSort = e.target.value as 'relevance' | 'centrality';
+              setSortBy(newSort);
+              if (query) {
+                // Trigger search with new sort
+                api.search(query, 10, newSort).then(res => setResults(res.results));
+              }
+            }}
+            style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border)' }}
+          >
+            <option value="relevance">Relevance</option>
+            <option value="centrality">Centrality</option>
+          </select>
+        </label>
+      </div>
 
       {isSearching && <p className="muted">Searching library…</p>}
       {searchError && (

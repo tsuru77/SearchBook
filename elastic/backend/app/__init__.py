@@ -1,3 +1,0 @@
-"""SearchBook FastAPI application package."""
-
-

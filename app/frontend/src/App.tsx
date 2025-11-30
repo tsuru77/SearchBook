@@ -9,7 +9,11 @@ function App() {
   return (
     <div className="app-shell">
       <nav className="top-nav">
-        <div className="brand">SearchBook</div>
+        <div className="brand">
+          <NavLink to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
+            SearchBook
+          </NavLink>
+        </div>
         <div className="nav-links">
           <NavLink to="/" end>
             Home

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { SearchBar } from '../components/SearchBar';
 import { SearchResultCard } from '../components/SearchResultCard';
@@ -15,13 +15,19 @@ export function HomeSearchView() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [sortBy, setSortBy] = useState<'relevance' | 'centrality'>('relevance');
+
+  // Load suggestions on mount (popular books)
+  useEffect(() => {
+    loadSuggestions('0');
+  }, []);
 
   const handleSearch = async (value: string) => {
     setQuery(value);
     setSearchError(null);
     setIsSearching(true);
     try {
-      const response = await api.search(value);
+      const response = await api.search(value, 10, sortBy);
       setResults(response.results);
       const topResultId = response.results[0]?.id ?? null;
       setSelectedBookId(topResultId);
@@ -58,11 +64,31 @@ export function HomeSearchView() {
         <div>
           <p className="eyebrow">Keyword Search</p>
           <h1>Find books instantly</h1>
-          <p className="muted">Powered by Elasticsearch BM25 + graph centrality.</p>
         </div>
       </header>
 
       <SearchBar onSubmit={handleSearch} />
+
+      <div className="controls-row" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+          Sort by:
+          <select
+            value={sortBy}
+            onChange={(e) => {
+              const newSort = e.target.value as 'relevance' | 'centrality';
+              setSortBy(newSort);
+              if (query) {
+                // Trigger search with new sort
+                api.search(query, 10, newSort).then(res => setResults(res.results));
+              }
+            }}
+            style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border)' }}
+          >
+            <option value="relevance">Relevance</option>
+            <option value="centrality">Centrality</option>
+          </select>
+        </label>
+      </div>
 
       {isSearching && <p className="muted">Searching library…</p>}
       {searchError && (
@@ -71,32 +97,36 @@ export function HomeSearchView() {
         </p>
       )}
 
-      <div className="grid two-column">
+      <div className="stack" style={{ gap: '3rem' }}>
         <div>
-          <h2>Results {query && <span className="muted">for “{query}”</span>}</h2>
+          {(results.length > 0 || isSearching || query) && (
+            <h2>Results {query && <span className="muted">for “{query}”</span>}</h2>
+          )}
           {results.length === 0 && !isSearching && <p className="muted">No results yet. Try a query.</p>}
-          <div className="stack">
+          <div className="results-grid">
             {results.map((result) => (
               <SearchResultCard key={result.id ?? crypto.randomUUID()} result={result} />
             ))}
           </div>
         </div>
 
-        <aside className="panel">
-          <div className="panel-header">
-            <h3>Suggestions</h3>
-            {selectedBookId && (
-              <button className="text-button" onClick={() => loadSuggestions(selectedBookId)}>
-                Refresh
-              </button>
-            )}
-          </div>
-          <SuggestionsList
-            suggestions={suggestions}
-            isLoading={isLoadingSuggestions}
-            error={suggestionsError}
-          />
-        </aside>
+        {suggestions.length > 0 && (
+          <aside className="panel">
+            <div className="panel-header">
+              <h3>Suggestions</h3>
+              {selectedBookId && (
+                <button className="text-button" onClick={() => loadSuggestions(selectedBookId)}>
+                  Refresh
+                </button>
+              )}
+            </div>
+            <SuggestionsList
+              suggestions={suggestions}
+              isLoading={isLoadingSuggestions}
+              error={suggestionsError}
+            />
+          </aside>
+        )}
       </div>
     </section>
   );

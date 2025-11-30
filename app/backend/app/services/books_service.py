@@ -2,7 +2,7 @@
 
 from fastapi import status
 
-from app.core.database import execute_query_one
+from app.core.database import execute_query, execute_query_one
 from app.schemas.books import BookResponse
 
 
@@ -16,8 +16,11 @@ class BookServiceError(Exception):
 async def get_book(book_id: str) -> BookResponse:
     """Fetch a single book by ID."""
     try:
+        # Increment click count
+        execute_query("SELECT increment_book_click(%s)", (int(book_id),), commit=True)
+
         book = execute_query_one(
-            "SELECT id, title, author, text, word_count FROM books WHERE id = %s",
+            "SELECT id, title, author, content AS text, word_count, image_url FROM books WHERE id = %s",
             (int(book_id),)
         )
     except ValueError:
@@ -35,6 +38,7 @@ async def get_book(book_id: str) -> BookResponse:
         text=book['text'],
         word_count=book['word_count'],
         centrality_score=None,
+        image_url=book.get('image_url'),
         metadata={},
     )
 

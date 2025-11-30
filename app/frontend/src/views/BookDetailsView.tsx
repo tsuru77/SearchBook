@@ -57,27 +57,69 @@ export function BookDetailsView() {
     <section className="book-view">
       <article>
         <header className="view-header">
-          <div>
-            <p className="eyebrow">Book Detail</p>
-            <h1>{book?.title ?? 'Untitled book'}</h1>
-            <p className="muted">{book?.author ?? 'Unknown author'}</p>
-          </div>
-          <div className="score-stack">
-            <span className="score-chip">
-              Word count: <strong>{book?.word_count ?? '—'}</strong>
-            </span>
-            <span className="score-chip secondary">
-              Centrality: <strong>{book?.centrality_score?.toFixed(3) ?? '—'}</strong>
-            </span>
+          <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', width: '100%' }}>
+            {book?.image_url && (
+              <img
+                src={book.image_url}
+                alt={`Cover of ${book.title}`}
+                style={{
+                  width: '200px',
+                  aspectRatio: '2/3',
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                }}
+              />
+            )}
+            <div style={{ flex: 1 }}>
+              <p className="eyebrow">Book Detail</p>
+              <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{book?.title ?? 'Untitled book'}</h1>
+              <p className="muted" style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>{book?.author ?? 'Unknown author'}</p>
+
+              <div className="score-stack" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
+                <span className="score-chip">
+                  Word count: <strong>{book?.word_count?.toLocaleString() ?? '—'}</strong>
+                </span>
+                <span className="score-chip secondary">
+                  Centrality: <strong>{book?.centrality_score?.toFixed(3) ?? '—'}</strong>
+                </span>
+                {book?.metadata && Object.entries(book.metadata).map(([key, value]) => (
+                  <span key={key} className="score-chip" style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
+                    {key}: <strong>{value}</strong>
+                  </span>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                {/* Gutenberg button removed as per user request */}
+              </div>
+            </div>
           </div>
         </header>
 
-        <section className="book-text">
-          <pre>{book?.text ?? 'No text available.'}</pre>
+        <section className="book-text" style={{ background: 'transparent', padding: 0, marginTop: '2rem' }}>
+          <div className="panel">
+            <h3>Raw Text</h3>
+            <p className="muted" style={{ marginBottom: '1rem' }}>
+              The full text content of this book is available.
+            </p>
+            <button
+              className="text-button"
+              onClick={() => {
+                if (book?.text) {
+                  const blob = new Blob([book.text], { type: 'text/plain' });
+                  const url = URL.createObjectURL(blob);
+                  window.open(url, '_blank');
+                }
+              }}
+            >
+              Open Raw Text in New Tab ↗
+            </button>
+          </div>
         </section>
       </article>
 
-      <aside className="panel">
+      <aside className="panel" style={{ marginTop: '2rem' }}>
         <div className="panel-header">
           <h3>Suggested books</h3>
           <button className="text-button" onClick={refreshSuggestions}>

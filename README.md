@@ -1,52 +1,136 @@
-# SearchBook
+# 📚 SearchBook
 
-Full-text library search engine for the DAAR Project 3 assignment. The platform combines a Vite + React SPA, a FastAPI backend, and Elasticsearch for indexing, along with a graph-based ranking layer (Jaccard similarities + centrality metrics). Everything runs locally via Docker Compose.
+SearchBook is a powerful search engine and digital library management system designed to ingest, index, and search through large collections of books. It features advanced search capabilities, including regex support, relevance ranking based on graph centrality, and intelligent book suggestions.
 
-## Repository layout
+## ✨ Features
 
-```
-.
-├── backend/          # FastAPI app, routers, services, requirements
-├── frontend/         # React (Vite) SPA
-├── ingestion/        # Data preparation + ES ingestion scripts
-├── docker/           # Helper configs (e.g. Kibana)
-├── docker-compose.yml
-├── datasets/         # Local book corpus (ignored in git)
-└── README.md
-```
+- **🔍 Full-Text Search**: Fast keyword search across thousands of books.
+- **🧠 Advanced Regex Search**: Powerful regular expression search to find complex patterns within texts.
+- **📊 Relevance Ranking**:
+  - **BM25**: Industry-standard probabilistic information retrieval algorithm.
+  - **Closeness Centrality**: Graph-based ranking to identify "central" or important books in the collection.
+- **💡 Smart Suggestions**:
+  - **Jaccard Similarity**: Suggests related books based on vocabulary overlap.
+  - **Graph-Based Recommendations**: Finds neighbors in the similarity graph.
+- **🚀 High-Performance Ingestion**:
+  - **Project Gutenberg Integration**: Automatically download and process books.
+  - **Local File Support**: Ingest your own `.txt` book collections.
+  - **Parallel Processing**: Efficiently handles large datasets.
 
-## Development prerequisites
+## 🛠️ Tech Stack
 
-- Python 3.11+
-- Node.js 20+
-- Docker Desktop (or compatible engine) with Compose v2
-- Elasticsearch 8.x Docker image credentials (elastic / password)
+### Frontend
+- **React**: Modern UI library for building interactive interfaces.
+- **Vite**: Next-generation frontend tooling for fast builds.
+- **TypeScript**: Type-safe code for better maintainability.
+- **TailwindCSS**: Utility-first CSS framework for rapid UI development.
 
-## Quick start
+### Backend
+- **FastAPI**: High-performance, easy-to-learn web framework for building APIs with Python.
+- **NetworkX**: Python library for the creation, manipulation, and study of complex networks (used for centrality and similarity graphs).
+- **Rank-BM25**: Library for BM25 ranking algorithms.
+- **PostgreSQL**: Robust open-source relational database for storing book metadata, indices, and graph data.
 
-1. Clone the repo & install dependencies for each service (`backend` and `frontend`).
-2. Copy `backend/env.example` to `backend/.env` (or export the same variables another way).
-3. Place your sample corpus (e.g. 5 books) under `datasets/sample_books/`.
-4. Create a Python virtualenv for `backend`, install requirements, and run the ingestion script targeting the sample data:
+### Infrastructure
+- **Docker**: Containerization for consistent development and deployment environments.
+- **Docker Compose**: Multi-container orchestration.
+
+## 🚀 Getting Started
+
+### Prerequisites
+- [Docker](https://www.docker.com/get-started) and [Docker Compose](https://docs.docker.com/compose/install/) installed on your machine.
+- [Git](https://git-scm.com/) for cloning the repository.
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/SearchBook.git
+   cd SearchBook
+   ```
+
+2. **Start the application**
+   ```bash
+   docker-compose up --build
+   ```
+   This command will build the images and start the frontend, backend, and database services.
+
+3. **Access the application**
+   - **Frontend**: [http://localhost:3000](http://localhost:3000)
+   - **Backend API**: [http://localhost:8000](http://localhost:8000)
+   - **API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+## 📥 Data Ingestion
+
+Before you can search, you need to populate the database with books. We provide a powerful CLI tool for this.
+
+### Quick Start
+To load the first 10 books from Project Gutenberg:
 
 ```bash
-cd backend && python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python ../ingestion/load_books.py --corpus-path ../datasets/sample_books --limit 5
+# Enter the backend container or run locally if environment is set up
+docker-compose exec backend bash
+
+# Run the ingestion script
+python ingestion/load_books.py --source gutenberg --start-id 1 --limit 10
 ```
 
-5. Start the stack:
+### Full Corpus (Project Requirement)
+To meet the project requirement of a minimum library size of 1664 books:
 
 ```bash
-docker compose up --build
+# Load 1664 books from Gutenberg
+python ingestion/load_books.py --source gutenberg --start-id 1 --limit 1664 --phase all
 ```
 
-Frontend served at http://localhost:8080, backend at http://localhost:8000, Elasticsearch at http://localhost:9200.
+### Ingestion Phases
+The ingestion process is split into two phases for flexibility:
 
-More detailed instructions will be documented as the implementation evolves.
+1.  **Phase 1 (Load)**: Downloads books, processes text, and populates the `books` and `inverted_index` tables.
+2.  **Phase 2 (Compute)**: Calculates Jaccard similarity graphs and Closeness Centrality scores.
 
+You can run them together or separately:
 
-recherche regex:
-https://fr.wikipedia.org/wiki/Okapi_BM25
-https://fr.wikipedia.org/wiki/Indice_et_distance_de_Jaccard
-https://en.wikipedia.org/wiki/Closeness_(mathematics)
+```bash
+# Run both phases (default)
+python ingestion/load_books.py --source gutenberg --limit 50 --phase all
+
+# Run only loading
+python ingestion/load_books.py --source gutenberg --limit 50 --phase 1
+
+# Run only computation (after loading more books)
+python ingestion/load_books.py --source gutenberg --phase 2
+```
+
+### Common Options
+- `--source`: `gutenberg` or `local`.
+- `--start-id`: ID to start downloading from (Gutenberg only).
+- `--limit`: Number of books to process.
+- `--min-words`: Minimum word count to include a book (default: 10,000).
+- `--jaccard-threshold`: Minimum similarity score (0-1) to create an edge in the graph.
+
+For a full list of commands and workflows, check `app/QUICK_START.sh`.
+
+## 🏗️ Architecture
+
+The application follows a modern 3-tier architecture:
+
+1.  **Client (Frontend)**: A React SPA that communicates with the backend via REST API. It handles user input for search queries and displays results and visualizations.
+2.  **Server (Backend)**: A FastAPI service that:
+    - Exposes endpoints for search and suggestions.
+    - Orchestrates the ingestion pipeline.
+    - Interfaces with the database.
+3.  **Data Layer (Database)**: PostgreSQL database storing:
+    - Raw book text and metadata.
+    - Inverted index for fast full-text search.
+    - Graph data (nodes and edges) for similarity and centrality calculations.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1.  Fork the project
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request

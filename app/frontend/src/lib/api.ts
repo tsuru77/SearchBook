@@ -25,8 +25,8 @@ async function http<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  search(query: string, size = 10) {
-    const params = new URLSearchParams({ query, size: String(size) });
+  search(query: string, size = 10, sortBy: 'relevance' | 'centrality' = 'relevance') {
+    const params = new URLSearchParams({ query, size: String(size), sort_by: sortBy });
     return http<SearchResponse>(`/search?${params.toString()}`);
   },
   regex(regex: string, size = 10) {

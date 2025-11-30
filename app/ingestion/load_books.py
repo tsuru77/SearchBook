@@ -11,11 +11,12 @@ import os
 import sys
 
 # --- CONFIGURATION (À ADAPTER) ---
+# --- CONFIGURATION (À ADAPTER) ---
 DB_CONFIG = {
-    'host': "localhost",
-    'database': "searchbook",
-    'user': "searchbook",
-    'password': "searchbook_password"
+    'host': os.environ.get("POSTGRES_HOST", "localhost"),
+    'database': os.environ.get("POSTGRES_DB", "searchbook"),
+    'user': os.environ.get("POSTGRES_USER", "searchbook"),
+    'password': os.environ.get("POSTGRES_PASSWORD", "searchbook_password")
 }
 
 GUTENBERG_URL = "https://www.gutenberg.org/cache/epub/{id}/pg{id}.txt"
@@ -36,9 +37,14 @@ try:
     DEFAULT_STOP_WORDS = STOP_LANGUAGES['english'] 
 except LookupError:
     # Gérer si les données NLTK ne sont pas installées
-    print("ATTENTION: Les données NLTK (stopwords) ne sont pas installées.")
-    STOP_LANGUAGES = {}
-    DEFAULT_STOP_WORDS = set()
+    print("ATTENTION: Les données NLTK (stopwords) ne sont pas installées. Tentative de téléchargement...")
+    import nltk
+    nltk.download('stopwords')
+    STOP_LANGUAGES = {
+        'french': set(stopwords.words('french')),
+        'english': set(stopwords.words('english')),
+    }
+    DEFAULT_STOP_WORDS = STOP_LANGUAGES['english']
 
 # Seuil de similarité Jaccard pour créer une arête dans le graphe
 JACCARD_THRESHOLD = 0.1
@@ -148,9 +154,11 @@ def _process_and_insert_book(cursor, content, gutenberg_id, min_words, conn, boo
         term_frequencies[token] += 1
 
     # --- Insertion dans la table BOOKS ---
+    image_url = f"https://www.gutenberg.org/cache/epub/{gutenberg_id}/pg{gutenberg_id}.cover.medium.jpg"
+    
     cursor.execute("""
-        INSERT INTO books (gutenberg_id, title, author, language, publication_year, content, word_count)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO books (gutenberg_id, title, author, language, publication_year, content, word_count, image_url)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id;
     """, (
         gutenberg_id,
@@ -159,7 +167,8 @@ def _process_and_insert_book(cursor, content, gutenberg_id, min_words, conn, boo
         metadata.get('language'),
         metadata.get('publication_year'),
         content.lower(),
-        word_count
+        word_count,
+        image_url
     ))
     book_id = cursor.fetchone()[0]
     
@@ -181,7 +190,7 @@ def _process_and_insert_book(cursor, content, gutenberg_id, min_words, conn, boo
     print(f"   -> Livre ID {book_id} indexé et enregistré.")
     return True # Indique le succès
 
-def ingest_and_index_books_from_directory(conn : psycopg2._T_conn, directory_path : str, min_words : int) -> dict: 
+def ingest_and_index_books_from_directory(conn, directory_path : str, min_words : int) -> dict: 
     """Lit les fichiers .txt dans un répertoire local et les indexe."""
     print(f"--- 1. INGESTION À PARTIR DU RÉPERTOIRE LOCAL '{directory_path}' ---")
     
@@ -218,7 +227,7 @@ def ingest_and_index_books_from_directory(conn : psycopg2._T_conn, directory_pat
     return book_token_sets
 
 
-def _ingest_from_gutenberg(conn : psycopg2._T_conn, start_id : int, num_texts : int, min_words : int) -> dict: 
+def _ingest_from_gutenberg(conn, start_id : int, num_texts : int, min_words : int) -> dict: 
     """Télécharge les livres depuis Gutenberg et les indexe."""
     print(f"--- 1. INGESTION DIRECTE DEPUIS GUTENBERG (ID {start_id} à {start_id + num_texts}) ---")
     
@@ -263,7 +272,7 @@ def calculate_jaccard(set_a, set_b):
     return intersection / union if union > 0 else 0
 
 
-def calculate_graph_metrics(conn : psycopg2._T_conn, book_token_sets : dict):
+def calculate_graph_metrics(conn, book_token_sets : dict):
     """Calcule Jaccard, construit le graphe et calcule la Closeness Centrality."""
     print("--- 2. CALCUL DES MÉTRIQUES DU GRAPHE ---")
     

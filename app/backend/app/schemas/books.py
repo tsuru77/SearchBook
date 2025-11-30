@@ -8,6 +8,7 @@ class BookResponse(BaseModel):
     text: str | None
     word_count: int | None
     centrality_score: float | None
+    image_url: str | None = None
     metadata: dict[str, str | int | float] | None = None
 
 

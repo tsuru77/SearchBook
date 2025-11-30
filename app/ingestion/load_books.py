@@ -1,5 +1,6 @@
 import requests
 import psycopg2
+from psycopg2.extensions import connection as psycopg2_conn # On utilise un alias pour la clarté
 import re
 import argparse
 import unicodedata
@@ -77,21 +78,24 @@ def clean_and_tokenize(content : str, language : str = 'english') -> list[str]:
     """
     # 1. Mise en minuscule
     content_lower = content.lower()
+    content_to_clean = content_lower
     
-    # 2. Normalisation Unicode (NFD) et suppression des accents (Mn)
-    normalized_content = unicodedata.normalize('NFD', content_lower)
-    content_no_accents = ''.join(
-        char for char in normalized_content 
-        if unicodedata.category(char) != 'Mn'
-    )
-    
+    if NORMALIZE_UNICODE:
+        # 2. Normalisation Unicode (NFD) et suppression des accents (Mn)
+        normalized_content = unicodedata.normalize('NFD', content_lower)
+        content_to_clean = ''.join(
+            char for char in normalized_content 
+            if unicodedata.category(char) != 'Mn'
+        )
+        
     # 3. Retrait de la ponctuation et des caractères spéciaux
-    content_clean = re.sub(r'[^a-z0-9\s]', '', content_no_accents)
+    content_clean = re.sub(r"[^\w\s'-]", ' ', content_to_clean, flags=re.UNICODE)
+
     
     # 4. Tokenisation simple et gestion des stop words
     tokens = content_clean.split()
     
-    stop_words = DEFAULT_STOP_WORDS # Par défaut
+    stop_words = {} # Par défaut
 
     if not DISABLE_STOP_WORDS:
         lang_key = language.lower()
@@ -120,7 +124,7 @@ def clean_and_tokenize(content : str, language : str = 'english') -> list[str]:
                 
             except LookupError:
                 # Échec: La langue n'est pas supportée par NLTK, on garde le DEFAULT_STOP_WORDS
-                pass
+                stop_words = DEFAULT_STOP_WORDS
     
     # Filtrer les mots vides et les chaînes vides
     clean_tokens = [token for token in tokens if token and token not in stop_words]
@@ -181,7 +185,7 @@ def _process_and_insert_book(cursor, content, gutenberg_id, min_words, conn, boo
     print(f"   -> Livre ID {book_id} indexé et enregistré.")
     return True # Indique le succès
 
-def ingest_and_index_books_from_directory(conn : psycopg2._T_conn, directory_path : str, min_words : int) -> dict: 
+def ingest_and_index_books_from_directory(conn : psycopg2_conn, directory_path : str, min_words : int) -> dict: 
     """Lit les fichiers .txt dans un répertoire local et les indexe."""
     print(f"--- 1. INGESTION À PARTIR DU RÉPERTOIRE LOCAL '{directory_path}' ---")
     
@@ -218,13 +222,14 @@ def ingest_and_index_books_from_directory(conn : psycopg2._T_conn, directory_pat
     return book_token_sets
 
 
-def _ingest_from_gutenberg(conn : psycopg2._T_conn, start_id : int, num_texts : int, min_words : int) -> dict: 
+def _ingest_from_gutenberg(conn : psycopg2_conn, start_id : int, num_texts : int, min_words : int) -> dict: 
     """Télécharge les livres depuis Gutenberg et les indexe."""
     print(f"--- 1. INGESTION DIRECTE DEPUIS GUTENBERG (ID {start_id} à {start_id + num_texts}) ---")
     
     cursor = conn.cursor()
-    book_token_sets = {} 
-    
+    book_token_sets = {}
+
+
     for i in range(start_id, start_id + num_texts):
         url = GUTENBERG_URL.format(id=i)
         
@@ -263,7 +268,7 @@ def calculate_jaccard(set_a, set_b):
     return intersection / union if union > 0 else 0
 
 
-def calculate_graph_metrics(conn : psycopg2._T_conn, book_token_sets : dict):
+def calculate_graph_metrics(conn : psycopg2_conn, book_token_sets : dict):
     """Calcule Jaccard, construit le graphe et calcule la Closeness Centrality."""
     print("--- 2. CALCUL DES MÉTRIQUES DU GRAPHE ---")
     
@@ -330,12 +335,13 @@ def main():
                         help="Chemin vers le répertoire contenant les fichiers Gutenberg (.txt) pour l'ingestion locale.")
     
     # Options pour le téléchargement (utilisé si --path n'est pas fourni)
-    parser.add_argument('--start_id', type=int, default=1, help="ID Gutenberg à partir duquel commencer le téléchargement (si pas de --path).")
-    parser.add_argument('--num_texts', type=int, default=50, help="Nombre de textes à tenter de traiter (si pas de --path).")
+    parser.add_argument('--start-id', type=int, default=1, help="ID Gutenberg à partir duquel commencer le téléchargement (si pas de --path).")
+    parser.add_argument('--num-texts', type=int, default=50, help="Nombre de textes à tenter de traiter (si pas de --path).")
     
     # Autres options
-    parser.add_argument('--min_words', type=int, default=10000, help="Taille minimale des livres pour être inclus.")
+    parser.add_argument('--min-words', type=int, default=10000, help="Taille minimale des livres pour être inclus.")
     args = parser.parse_args()
+    print(args)
 
     # 1. Connexion DB
     try:

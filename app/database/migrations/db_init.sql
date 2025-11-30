@@ -12,9 +12,10 @@ CREATE TABLE books (
     title               TEXT NOT NULL,      -- Titre du livre 
     author              TEXT,               -- Auteur du livre
     language            TEXT,               -- Langue du document
+    publication_year    INTEGER,            -- Année de publication
+    image_url           TEXT,               -- URL de l'image du livre
     content             TEXT NOT NULL,      -- Le contenu brut du livre
     word_count          INTEGER DEFAULT 0,  -- Nombre de mot dans le document
-    publication_year    INTEGER,            -- Année de publication
 
     click_count         BIGINT DEFAULT 0,   -- Nombre de clics (popularité)
     closeness_score     FLOAT DEFAULT 0,    -- Le score de centralité (closeness)
@@ -107,18 +108,31 @@ $$ LANGUAGE plpgsql STABLE;
 -- Utilité: Obtenir les K livres les plus similaires à un livre donné
 -- Cas d'usage: "Livres similaires" - afficher les voisins Jaccard
 -- Retour: Liste de livres avec titre, auteur, score Jaccard
-CREATE OR REPLACE FUNCTION get_suggestions(p_book_id INTEGER, p_limit INTEGER DEFAULT 5)
-RETURNS TABLE(similar_book_id INTEGER, title TEXT, author TEXT, similarity_score FLOAT) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT DISTINCT
-        CASE WHEN jg.book_a_id = p_book_id THEN jg.book_b_id ELSE jg.book_a_id END as neighbor_id,
-        b.title, b.author, jg.similarity_score
-    FROM jaccard_graph jg
-    JOIN books b ON b.id = (CASE WHEN jg.book_a_id = p_book_id THEN jg.book_b_id ELSE jg.book_a_id END)
-    WHERE jg.book_a_id = p_book_id OR jg.book_b_id = p_book_id
-    ORDER BY jg.similarity_score DESC
-    LIMIT p_limit;
+CREATE OR REPLACE FUNCTION get_suggestions(p_book_id INTEGER, p_limit INTEGER DEFAULT 5) RETURNS TABLE(
+        similar_book_id INTEGER,
+        title TEXT,
+        author TEXT,
+        similarity_score BIGINT,
+        image_url TEXT
+    ) AS $$ BEGIN RETURN QUERY
+SELECT b.id as similar_book_id,
+    b.title,
+    b.author,
+    b.click_count as similarity_score,
+    b.image_url
+FROM books b -- Join with jaccard_graph to find neighbors (undirected graph logic)
+    JOIN jaccard_graph j ON (
+        j.book_a_id = p_book_id
+        AND j.book_b_id = b.id
+    )
+    OR (
+        j.book_b_id = p_book_id
+        AND j.book_a_id = b.id
+    )
+WHERE b.id != p_book_id
+ORDER BY b.click_count DESC,
+    j.similarity_score DESC
+LIMIT p_limit;
 END;
 $$ LANGUAGE plpgsql STABLE;
 
@@ -138,3 +152,43 @@ BEGIN
     LIMIT p_limit;
 END;
 $$ LANGUAGE plpgsql STABLE;
+
+
+-- Sorted by popularity (click_count) then similarity
+CREATE OR REPLACE FUNCTION get_suggestions(p_book_id INTEGER, p_limit INTEGER DEFAULT 5) RETURNS TABLE(
+        similar_book_id INTEGER,
+        title TEXT,
+        author TEXT,
+        similarity_score BIGINT,
+        image_url TEXT
+    ) AS $$ BEGIN RETURN QUERY
+SELECT b.id as similar_book_id,
+    b.title,
+    b.author,
+    b.click_count as similarity_score,
+    b.image_url
+FROM books b -- Join with jaccard_graph to find neighbors (undirected graph logic)
+    JOIN jaccard_graph j ON (
+        j.book_a_id = p_book_id
+        AND j.book_b_id = b.id
+    )
+    OR (
+        j.book_b_id = p_book_id
+        AND j.book_a_id = b.id
+    )
+WHERE b.id != p_book_id
+ORDER BY b.click_count DESC,
+    j.similarity_score DESC
+LIMIT p_limit;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Function to increment click count
+CREATE OR REPLACE FUNCTION increment_book_click(p_book_id INTEGER)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE books
+    SET click_count = click_count + 1
+    WHERE id = p_book_id;
+END;
+$$ LANGUAGE plpgsql;

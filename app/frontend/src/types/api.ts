@@ -33,6 +33,7 @@ export type Suggestion = {
   title: string | null;
   author: string | null;
   similarity: number | null;
+  image_url: string | null;
 };
 
 export type SuggestionsResponse = {

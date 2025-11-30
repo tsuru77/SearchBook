@@ -18,10 +18,11 @@ class SuggestionsServiceError(Exception):
 async def get_suggestions(book_id: str, limit: int) -> SuggestionsResponse:
     """Get similar books based on Jaccard similarity."""
     try:
-        # Verify book exists
-        book = execute_query_one("SELECT id FROM books WHERE id = %s", (int(book_id),))
-        if not book:
-            raise SuggestionsServiceError("Book not found", status.HTTP_404_NOT_FOUND)
+        # Verify book exists (unless requesting general suggestions with id=0)
+        if int(book_id) != 0:
+            book = execute_query_one("SELECT id FROM books WHERE id = %s", (int(book_id),))
+            if not book:
+                raise SuggestionsServiceError("Book not found", status.HTTP_404_NOT_FOUND)
         
         # Fetch similar books using stored procedure (returns popular books)
         similar = execute_query_all(
@@ -35,6 +36,7 @@ async def get_suggestions(book_id: str, limit: int) -> SuggestionsResponse:
                 title=row['title'],
                 author=row['author'],
                 similarity=float(row['similarity_score']), # This is now click_count
+                image_url=row['image_url'],
             )
             for row in similar
         ]

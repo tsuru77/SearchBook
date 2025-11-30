@@ -37,7 +37,7 @@ export function SearchResultCard({ result }: Props) {
           </span>
         </div>
 
-        <p className="snippet">{result.snippet ?? 'No snippet available.'}</p>
+        {/* Snippet removed as per user request */}
       </div>
       {bookId && (
         <footer>

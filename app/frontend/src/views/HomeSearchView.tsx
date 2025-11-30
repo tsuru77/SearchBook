@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { SearchBar } from '../components/SearchBar';
 import { SearchResultCard } from '../components/SearchResultCard';
@@ -15,6 +15,11 @@ export function HomeSearchView() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
+  // Load suggestions on mount (popular books)
+  useEffect(() => {
+    loadSuggestions('0');
+  }, []);
 
   const handleSearch = async (value: string) => {
     setQuery(value);
@@ -58,7 +63,6 @@ export function HomeSearchView() {
         <div>
           <p className="eyebrow">Keyword Search</p>
           <h1>Find books instantly</h1>
-          <p className="muted">Powered by Elasticsearch BM25 + graph centrality.</p>
         </div>
       </header>
 
@@ -71,9 +75,11 @@ export function HomeSearchView() {
         </p>
       )}
 
-      <div className="grid two-column">
+      <div className="stack" style={{ gap: '3rem' }}>
         <div>
-          <h2>Results {query && <span className="muted">for “{query}”</span>}</h2>
+          {(results.length > 0 || isSearching || query) && (
+            <h2>Results {query && <span className="muted">for “{query}”</span>}</h2>
+          )}
           {results.length === 0 && !isSearching && <p className="muted">No results yet. Try a query.</p>}
           <div className="results-grid">
             {results.map((result) => (
@@ -82,21 +88,23 @@ export function HomeSearchView() {
           </div>
         </div>
 
-        <aside className="panel">
-          <div className="results-grid">
-            <h3>Suggestions</h3>
-            {selectedBookId && (
-              <button className="text-button" onClick={() => loadSuggestions(selectedBookId)}>
-                Refresh
-              </button>
-            )}
-          </div>
-          <SuggestionsList
-            suggestions={suggestions}
-            isLoading={isLoadingSuggestions}
-            error={suggestionsError}
-          />
-        </aside>
+        {suggestions.length > 0 && (
+          <aside className="panel">
+            <div className="panel-header">
+              <h3>Suggestions</h3>
+              {selectedBookId && (
+                <button className="text-button" onClick={() => loadSuggestions(selectedBookId)}>
+                  Refresh
+                </button>
+              )}
+            </div>
+            <SuggestionsList
+              suggestions={suggestions}
+              isLoading={isLoadingSuggestions}
+              error={suggestionsError}
+            />
+          </aside>
+        )}
       </div>
     </section>
   );

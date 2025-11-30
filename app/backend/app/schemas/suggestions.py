@@ -6,6 +6,7 @@ class Suggestion(BaseModel):
     title: str | None
     author: str | None
     similarity: float | None
+    image_url: str | None = None
 
 
 class SuggestionsResponse(BaseModel):

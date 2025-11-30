@@ -119,7 +119,7 @@ export function BookDetailsView() {
         </section>
       </article>
 
-      <aside className="panel">
+      <aside className="panel" style={{ marginTop: '2rem' }}>
         <div className="panel-header">
           <h3>Suggested books</h3>
           <button className="text-button" onClick={refreshSuggestions}>

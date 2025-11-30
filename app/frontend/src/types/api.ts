@@ -4,6 +4,7 @@ export type SearchResult = {
   author: string | null;
   score: number | null;
   centrality_score: number | null;
+  image_url: string | null;
   snippet: string | null;
 };
 
@@ -23,6 +24,7 @@ export type BookResponse = {
   text: string | null;
   word_count: number | null;
   centrality_score: number | null;
+  image_url: string | null;
   metadata?: Record<string, string | number | null>;
 };
 

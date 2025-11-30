@@ -28,7 +28,7 @@ async def search_books(query: str, size: int) -> SearchResponse:
     """Full-text search using BM25 ranking."""
     try:
         # Fetch all books
-        all_books = execute_query_all("SELECT id, title, author, text, word_count FROM books ORDER BY id")
+        all_books = execute_query_all("SELECT id, title, author, content AS text, word_count, image_url FROM books ORDER BY id")
         
         if not all_books:
             return SearchResponse(total=0, results=[])
@@ -57,6 +57,7 @@ async def search_books(query: str, size: int) -> SearchResponse:
                     author=book['author'],
                     score=scores[idx],
                     centrality_score=None,
+                    image_url=book.get('image_url'),
                     snippet=snippet,
                 ))
         
@@ -73,7 +74,7 @@ async def regex_search(regex: str, size: int) -> AdvancedSearchResponse:
         pattern = re.compile(regex, re.IGNORECASE)
         
         # Fetch all books
-        all_books = execute_query_all("SELECT id, title, author, text, word_count FROM books ORDER BY id")
+        all_books = execute_query_all("SELECT id, title, author, content AS text, word_count, image_url FROM books ORDER BY id")
         
         results: list[SearchResult] = []
         for book in all_books:
@@ -86,6 +87,7 @@ async def regex_search(regex: str, size: int) -> AdvancedSearchResponse:
                     author=book['author'],
                     score=None,
                     centrality_score=None,
+                    image_url=book.get('image_url'),
                     snippet=snippet,
                 ))
                 if len(results) >= size:

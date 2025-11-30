@@ -23,7 +23,7 @@ services:
   backend:
     build:
       context: ./backend
-    # command: uvicorn app.main:app --host 0.0.0.0 --port 80 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 80 --reload
     env_file:
       - .env
     environment:
@@ -35,20 +35,25 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # ports:
-    #   - "8000:80"
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend/app:/app/app
 
   frontend:
     build:
       context: ./frontend
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      target: deps
+    command: npm run dev -- --host 0.0.0.0 --port 80
     env_file:
       - .env
     depends_on:
       - backend
     ports:
       - "8080:80"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   postgres_data:

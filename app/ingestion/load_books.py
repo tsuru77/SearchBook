@@ -11,6 +11,9 @@ import time
 import os
 import sys
 
+# import module pour calculer la centralité
+import graph_algorithms
+
 # --- CONFIGURATION (À ADAPTER) ---
 DB_CONFIG = {
     'host': "localhost",
@@ -133,7 +136,7 @@ def clean_and_tokenize(content : str, language : str = 'english') -> list[str]:
 
 # --- B. INGESTION ET INDEXATION ---
 
-def _process_and_insert_book(cursor, content, gutenberg_id, min_words, conn, book_token_sets):
+def _process_and_insert_book(cursor, content : str, gutenberg_id : int, min_words : int, conn : psycopg2_conn, book_token_sets : dict[int, set[str]]) -> bool | None:
     """Logique de traitement et d'insertion pour un seul livre (utilisée par les deux fonctions d'ingestion)."""
     
     metadata = extract_metadata(content)
@@ -185,7 +188,7 @@ def _process_and_insert_book(cursor, content, gutenberg_id, min_words, conn, boo
     print(f"   -> Livre ID {book_id} indexé et enregistré.")
     return True # Indique le succès
 
-def ingest_and_index_books_from_directory(conn : psycopg2_conn, directory_path : str, min_words : int) -> dict: 
+def ingest_and_index_books_from_directory(conn : psycopg2_conn, directory_path : str, min_words : int) -> dict[int, set[str]]: 
     """Lit les fichiers .txt dans un répertoire local et les indexe."""
     print(f"--- 1. INGESTION À PARTIR DU RÉPERTOIRE LOCAL '{directory_path}' ---")
     
@@ -222,7 +225,7 @@ def ingest_and_index_books_from_directory(conn : psycopg2_conn, directory_path :
     return book_token_sets
 
 
-def _ingest_from_gutenberg(conn : psycopg2_conn, start_id : int, num_texts : int, min_words : int) -> dict: 
+def _ingest_from_gutenberg(conn : psycopg2_conn, start_id : int, num_texts : int, min_words : int) -> dict[int, set[str]]: 
     """Télécharge les livres depuis Gutenberg et les indexe."""
     print(f"--- 1. INGESTION DIRECTE DEPUIS GUTENBERG (ID {start_id} à {start_id + num_texts}) ---")
     
@@ -261,14 +264,14 @@ def _ingest_from_gutenberg(conn : psycopg2_conn, start_id : int, num_texts : int
 
 # (Les fonctions calculate_jaccard et calculate_graph_metrics restent inchangées)
 
-def calculate_jaccard(set_a, set_b):
+def calculate_jaccard(set_a : set[str], set_b : set[str]):
     """Calcule l'indice de Jaccard entre deux ensembles de tokens."""
     intersection = len(set_a.intersection(set_b))
     union = len(set_a.union(set_b))
     return intersection / union if union > 0 else 0
 
 
-def calculate_graph_metrics(conn : psycopg2_conn, book_token_sets : dict):
+def calculate_graph_metrics(conn : psycopg2_conn, book_token_sets : dict[int, set[str]]):
     """Calcule Jaccard, construit le graphe et calcule la Closeness Centrality."""
     print("--- 2. CALCUL DES MÉTRIQUES DU GRAPHE ---")
     
@@ -301,7 +304,8 @@ def calculate_graph_metrics(conn : psycopg2_conn, book_token_sets : dict):
     
     # --- 2b. Calcul de la Centralité de Proximité (Closeness) ---
     if G.number_of_nodes() > 0:
-        closeness_scores = nx.closeness_centrality(G, distance='weight') 
+        # closeness_scores = nx.closeness_centrality(G, distance='weight') 
+        closeness_scores = nx.closeness_centrality(G)
     else:
         closeness_scores = {}
         print("   -> Graphe vide, Closeness non calculée.")

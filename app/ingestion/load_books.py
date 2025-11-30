@@ -1,15 +1,14 @@
 import requests
 import psycopg2
-from psycopg2.extensions import connection as psycopg2_conn # On utilise un alias pour la clarté
+from psycopg2.extensions import connection as psycopg2_conn # alias pour le typage
 import re
 import argparse
 import unicodedata
 from nltk.corpus import stopwords
-import networkx as nx
+# import networkx as nx
 from collections import defaultdict
 import time
 import os
-import sys
 
 # import module pour calculer la centralité
 import graph_algorithms
@@ -281,7 +280,9 @@ def calculate_graph_metrics(conn : psycopg2_conn, book_token_sets : dict[int, se
     cursor = conn.cursor()
     
     jaccard_inserts = []
-    G = nx.Graph()
+
+    adjacency_list = defaultdict(dict)
+    # G = nx.Graph()
     
     # --- 2a. Calcul des similarités Jaccard (N * (N-1) / 2 comparaisons) ---
     print(f"   -> Calcul de {N * (N-1) // 2} paires Jaccard...")
@@ -298,14 +299,16 @@ def calculate_graph_metrics(conn : psycopg2_conn, book_token_sets : dict[int, se
             if jaccard_score >= JACCARD_THRESHOLD:
                 distance = 1.0 - jaccard_score 
                 jaccard_inserts.append((id_a, id_b, jaccard_score)) 
-                G.add_edge(id_a, id_b, weight=distance)
-    
+                # G.add_edge(id_a, id_b, weight=distance)
+                adjacency_list[id_a][id_b] = distance
+                adjacency_list[id_b][id_a] = distance
+
     print(f"   -> {len(jaccard_inserts)} arêtes Jaccard > {JACCARD_THRESHOLD} créées.")
     
     # --- 2b. Calcul de la Centralité de Proximité (Closeness) ---
-    if G.number_of_nodes() > 0:
+    if adjacency_list:
         # closeness_scores = nx.closeness_centrality(G, distance='weight') 
-        closeness_scores = nx.closeness_centrality(G)
+        closeness_scores = graph_algorithms.calculate_closeness_scores(adjacency_list)
     else:
         closeness_scores = {}
         print("   -> Graphe vide, Closeness non calculée.")

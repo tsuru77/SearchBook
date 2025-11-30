@@ -6,4 +6,7 @@ networkx==3.3
 psycopg2-binary==2.9.9
 rank-bm25==0.2.2
 numpy==1.26.4
+psycopg2-binary==2.9.9
+rank-bm25==0.2.2
+numpy==1.26.4
 

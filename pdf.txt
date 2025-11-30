@@ -1,17 +1,3 @@
-Application web/mobile : Une application web/mobile se distingue d’une page web par ses fonctionnalit´es avec
-interaction utilisateur alors qu’une page web est par d´efinition statique. Cette interaction peut ˆetre explicite dans le sens
-o`u le r´esultat retourn´e par l’application est en r´eponse imm´ediate `a une action que l’utilisateur vient d’effectuer. Dans le
-cas d’une fonctionnalit´e d´eriv´ee d’une action, ou des actions plus anciennes, on parlera de fonctionnalit´e implicite.
-Biblioth`eque et moteur de recherche : Dans ce projet, on appelle biblioth`eque toute base de donn´ees de taille
-assez cons´equente de documents textuels. Un tel exemple est la base de Gutenberg disponible `a l’adresse suivante :
-http://www.gutenberg.org/ o`u les documents sont pr´esent´es sous diff´erentes formes, dont le format textuel. A l’instar de
-la base Gutenberg, une biblioth`eque peut contenir des dizaines de milliers de documents, rendant une recherche manuelle
-impossible. Un moteur de recherche dans une base de donn´ees est une application web/mobile permettant `a l’utilisateur
-d’acc´eder plus rapidement `a un document textuel par recherche de mot-clef, ou par historique de recherche en lien avec
-ce document (syst`eme de best-seller, de suggestion de publicit´e cibl´ee, de favoris utilisateur, et cetera).
-Analyse de pertinence et analyse de performance : La pertinence d’un moteur de recherche est un crit`ere subjectif
-d´etermin´e `a la suite de test utilisateur. En revanche, la performance d’un moteur de recherche est un crit`ere objectif
-mesurable par des tests de charge sur diff´erentes volumes de donn´ees.
 1 L’´enonc´e du projet 3 webapp
 Il s’agit de proposer une application web/mobile de moteur de recherche de document dans une biblioth`eque de livres
 sous format textuel. Pour cela, la premi`ere ´etape est de s’occuper de la couche data du projet, i.e. la construction d’une
@@ -65,41 +51,3 @@ de fr´equence, plutˆot qu’exhiber les colonnes de chiffre sans fins...
 — conclusion et perspectives sur ce probl`eme de moteur de recherche de biblioth`eque.
 Il est prudent d’avoir entre 10 et 15 pages pour un rapport avec un contenu moyen. Le nombre de pages recommand´e
 pour ce rapport est 12 pages. Il convient de bien respecter cette limitation : les pages 16+ ne seront pas lues !
-Pr´esentation orale 20min ou vid´eo pitch 5min : Chaque groupe peut choisir entre faire une pr´esentation orale en
-pr´esentiel ou d’envoyer une vid´eo pitch de son produit par courriel.
-Pr´esentation orale : La pr´esentation doit comprendre exactement 20 minutes. On veillera `a expliciter les points
-suivants :
-— Partie introductive (≈ 7 minutes) : membres de l’´equipe ; objectif du projet ; analyse fonctionnelle (usecase
-et/ou userstory) ; illustration avec un wireframe, on peut penser `a utiliser les outils tels que balsamiq, framerX,
-sketch, etc ; technologies utilis´ees (+justification pourquoi, ici, un tableau comparatif entre les technologies les
-plus fr´equentes sur le march´e est recommand´e) ; ´eventuellement un bilan de ressource d´eploy´ee pour le projet
-(Gantt chart ou Scrum backlog ou simplement un tableau r´esumant le nombre de jour-hommes par tˆache princi-
-pale du projet).
-— Partie technique (≈ 10 minutes) : architecture g´en´erale de l’application ; pr´esentation de la couche client (nombre
-de vues, rendu graphique vs. maquette de d´epart, etc) ; pr´esentation de la couche data (technologies de stockage
-utilis´ee pour le document textuel, les index, le graphe de Jaccard) ; pr´esentation de la couche serveur (algorithmes) ;
-— Partie d´emonstration et conclusion du projet (≈ 3 minutes) : une d´emonstration est obligatoire pour ce projet
-o`u l’application web/mobile doit fonctionner sur au minimum 2 machines diff´erentes connect´ees entre elles. Le
-mieux serait d’utiliser 3 machines pour la d´emonstration : une machine servant de serveur de l’application ; deux
-machines client connectant `a l’application via un navigateur et/ou une App Android et/ou une App iOS/iPadOS.
-
-Il est prudent d’avoir entre 18 et 22 pages de support de pr´esentation pour 20 minutes de pr´esentation orale.
-Pr´esentation par vid´eo picth : Au lieu d’effectuer une pr´esentation orale d´ecrite ci-dessus, chaque groupe peut
-choisir d’envoyer une pr´esentation par vid´eo pitch `a la place. La vid´eo de pr´esentation est de type highlight, et doit durer
-5 minutes environ. Elle doit reprendre les points essentiels d´ecrits ci-dessus. Il est imp´eratif d’inclure la d´emonstration
-dans la vid´eo pitch. Une p´enalit´e sera appliqu´ee `a tout groupe ayant choisi le rendu par vid´eo pitch o`u la vid´eo n’inclut
-pas de s´equence de d´emonstration du projet.
-Contraintes :
-— A r´ealiser en trinˆome ou en binˆome.
-— Archiver la totalit´e du rendu en un seul fichier compress´e contenant de la documentation (rapport ≈ 10-15 pages),
-la codebase contenant du code source comment´e, la vid´eo pitch si on avait choisi ce mode de rendu pour la
-pr´esentation, et tout ce dont on juge utile `a la lecture du projet sans toute fois d´epasser une trentaine de M´ega-octet
-(30Mo).
-— La nomination de pr´ef´erence est daar-projet3-NOM1-NOM2-NOM3.piki, o`u piki peut ˆetre un ´el´ement de {tgz, zip, rar, 7z,
-Ce format du nom de fichier est important pour un classement automatique des rendus de projet dans le pauvre PC
-de l’´evaluateur des projets de l’UE. (Il devrait avoir une p´enalit´e pour les rendus non conformes `a ce format du
-nom de fichier...).
-— Le fichier est `a d´eposer sur l’espace Moodle de l’UE. Deadline pour le rendu (dont vid´eo pitch si on avait choisi
-ce mode de rendu) : 23 Novembre 2025, 23h59.
-— Pr´esentation orale (si on n’avait pas choisi de rendre une vid´eo pitch) : 17 Novembre 2025, 10h45-12h45. L’ordre
-de passage sera d´etermin´e pendant les s´eances TME5 et TME6.

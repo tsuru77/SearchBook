@@ -1,0 +1,67 @@
+\chapter{Algorithmes et Structures de Données}
+
+Ce chapitre constitue le cœur théorique de notre rapport. Il détaille les algorithmes implémentés pour répondre aux exigences de recherche, de classement et de suggestion, en analysant leur complexité et en justifiant nos choix par rapport à l'état de l'art.
+
+\section{Recherche par Mots-clés : Indexation Inversée}
+
+\subsection{Définition du Problème}
+Le problème fondamental est de trouver, dans un corpus $\mathcal{C} = \{D_1, D_2, ..., D_N\}$ de $N$ documents, l'ensemble des documents contenant un terme de requête $q$. Une approche naïve consisterait à parcourir séquentiellement chaque document pour vérifier la présence de $q$. Avec $N=1664$ et une taille moyenne de $10^4$ mots, cette complexité en $O(N \times |D_{avg}|)$ est rédhibitoire pour une application interactive.
+
+\subsection{Structure de Données : L'Index Inversé}
+Pour résoudre ce problème, nous utilisons un \textbf{Index Inversé}. C'est une structure de données qui associe à chaque mot du vocabulaire $V$ la liste des identifiants de documents (postings list) où il apparaît.
+$$ Index : w \rightarrow \{ (d_i, freq_{i,w}), (d_j, freq_{j,w}), ... \} $$
+Dans notre implémentation PostgreSQL, cela se traduit par la table \texttt{inverted\_index}.
+
+\subsection{Analyse Théorique}
+La recherche d'un mot se fait désormais en $O(1)$ (ou $O(\log |V|)$ avec un B-Tree) pour accéder à l'entrée de l'index, puis en $O(k)$ où $k$ est le nombre de documents contenant le terme. C'est une amélioration drastique par rapport à la recherche linéaire. Pour les requêtes multi-mots ($q = w_1 \land w_2$), l'algorithme procède par intersection des listes de postings, optimisée en triant les listes par identifiant de document.
+
+\section{Recherche Avancée : Expressions Régulières (RegEx)}
+
+\subsection{Théorie des Automates}
+La recherche par expression régulière repose sur la théorie des langages formels. Une expression régulière est transformée en un \textbf{Automate Fini Non-Déterministe (NFA)} via l'algorithme de Thompson, puis éventuellement en un \textbf{Automate Fini Déterministe (DFA)} pour l'exécution.
+La complexité de la recherche d'un motif de taille $m$ dans un texte de taille $n$ est de $O(n)$ avec un DFA, mais la construction du DFA peut être exponentielle en $m$ ($O(2^m)$). En pratique, les moteurs de regex modernes (comme celui de Python \texttt{re} ou de PostgreSQL) utilisent des optimisations hybrides.
+
+\subsection{Stratégie d'Implémentation}
+Pour optimiser la recherche par regex sur notre corpus, nous avons mis en place une stratégie à deux niveaux :
+\begin{enumerate}
+    \item \textbf{Filtrage par Index (si possible)} : Si la regex contient des sous-chaînes littérales (ex: "chat.*noir"), nous utilisons l'index trigramme de PostgreSQL pour pré-filtrer les documents candidats.
+    \item \textbf{Scan Complet (Fallback)} : Si la regex est trop complexe, nous devons scanner le contenu des documents. Cependant, grâce à la puissance de PostgreSQL, ce scan est parallélisé et optimisé au niveau du moteur de base de données, offrant des performances acceptables pour 1664 livres, bien que plus lentes que la recherche par mot-clé.
+\end{enumerate}
+
+\section{Classement et Pertinence (Ranking)}
+
+Une fois les documents trouvés, il faut les classer. Nous combinons deux approches complémentaires.
+
+\subsection{BM25 (Best Matching 25)}
+Le BM25 est l'état de l'art des fonctions de classement probabilistes, successeur du TF-IDF. Il évalue la pertinence d'un document $D$ pour une requête $Q$ :
+$$ \text{score}(D, Q) = \sum_{i=1}^{n} IDF(q_i) \cdot \frac{f(q_i, D) \cdot (k_1 + 1)}{f(q_i, D) + k_1 \cdot (1 - b + b \cdot \frac{|D|}{avgdl})} $$
+Où :
+\begin{itemize}
+    \item $f(q_i, D)$ est la fréquence du terme dans le document.
+    \item $|D|$ est la longueur du document et $avgdl$ la longueur moyenne dans le corpus.
+    \item $k_1$ et $b$ sont des paramètres de calibration (généralement $k_1 \approx 1.2$, $b \approx 0.75$).
+\end{itemize}
+Contrairement au TF-IDF simple, BM25 sature l'influence de la fréquence des termes (un mot répété 100 fois n'est pas 100 fois plus pertinent que s'il est présent 1 fois) et normalise par la longueur du document, évitant de favoriser injustement les livres très longs.
+
+\subsection{Centralité de Proximité (Closeness Centrality)}
+En plus de la pertinence textuelle, nous utilisons un critère structurel basé sur le graphe de similarité des livres. La \textbf{Closeness Centrality} mesure à quel point un nœud est proche de tous les autres nœuds du graphe.
+Pour un nœud $u$, elle est définie comme l'inverse de la somme des distances géodésiques (plus courts chemins) vers tous les autres nœuds $v$ :
+$$ C(u) = \frac{N-1}{\sum_{v \neq u} d(u, v)} $$
+Un livre avec une forte centralité est un livre "central" culturellement dans notre corpus, partageant beaucoup de vocabulaire avec de nombreux autres ouvrages.
+\textbf{Algorithme} : Le calcul exact nécessite de lancer un BFS (Breadth-First Search) depuis chaque nœud. La complexité est de $O(N \cdot (N+E))$ pour un graphe non pondéré. Avec $N=1664$, cela reste calculable en un temps raisonnable lors de la phase d'ingestion (offline).
+
+\section{Système de Suggestion : Similarité de Jaccard}
+
+Pour suggérer des livres similaires, nous construisons un graphe où les arêtes représentent la similarité lexicale.
+
+\subsection{Indice de Jaccard}
+La similarité de Jaccard entre deux ensembles $A$ et $B$ (ici, les ensembles de mots uniques de deux livres) est définie par :
+$$ J(A, B) = \frac{|A \cap B|}{|A \cup B|} $$
+C'est une mesure intuitive : c'est la proportion de mots communs par rapport au vocabulaire total des deux livres.
+
+\subsection{Construction du Graphe}
+La construction naïve du graphe implique de comparer toutes les paires de livres, soit une complexité en $O(N^2 \times |V_{book}|)$.
+Pour 1664 livres, cela représente environ $1.38 \times 10^6$ paires. Bien que coûteux, ce calcul est effectué une seule fois lors de l'ingestion. Nous appliquons un seuil $\tau$ (ex: 0.1) : si $J(A, B) < \tau$, l'arête n'est pas créée. Cela permet d'obtenir un graphe clairsemé (sparse), plus rapide à parcourir pour les requêtes de voisinage.
+
+\subsection{Critique et Améliorations Possibles}
+L'indice de Jaccard sur des "sacs de mots" (bag of words) ignore la sémantique et l'ordre des mots. Deux livres peuvent partager beaucoup de mots fonctionnels sans traiter du même sujet. Une amélioration consisterait à utiliser des \textbf{Embeddings} (vecteurs d'IA comme Word2Vec ou BERT) et la similarité cosinus, qui captureraient mieux le sens des œuvres, mais au prix d'une complexité de calcul bien supérieure.

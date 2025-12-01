@@ -1,0 +1,46 @@
+\chapter{Introduction}
+
+\section{Contexte du Projet}
+
+Dans l'ère numérique actuelle, l'accès à l'information est devenu une commodité essentielle. Les bibliothèques, gardiennes du savoir depuis des millénaires, subissent une transformation radicale pour s'adapter à ce nouveau paradigme. La numérisation des ouvrages permet non seulement une préservation accrue du patrimoine littéraire et scientifique, mais offre également des possibilités inédites en termes d'accessibilité et d'analyse de contenu. C'est dans ce contexte que s'inscrit le projet \textbf{SearchBook}.
+
+Le projet SearchBook vise à concevoir et développer une application web et mobile complète permettant la gestion et l'exploration d'une bibliothèque numérique personnelle. Au-delà du simple stockage, l'ambition est de fournir un moteur de recherche performant et intelligent, capable de naviguer dans une vaste collection de documents textuels. Cette application doit répondre aux besoins d'utilisateurs exigeants, souhaitant non seulement retrouver un livre par son titre ou son auteur, mais également effectuer des recherches complexes au sein même du contenu des ouvrages, et découvrir de nouvelles lectures grâce à des mécanismes de suggestion avancés.
+
+La problématique centrale réside dans le traitement efficace de grands volumes de données textuelles. Avec une bibliothèque cible de plus de 1664 ouvrages, chacun contenant au minimum 10 000 mots, le système doit être capable d'indexer, de rechercher et de classer des millions de mots en temps quasi-réel. Cela impose des contraintes fortes en termes d'algorithmique et d'architecture logicielle, nécessitant l'utilisation de structures de données optimisées et de techniques d'indexation robustes.
+
+\section{Objectifs et Cahier des Charges}
+
+Le cahier des charges du projet définit un ensemble précis de contraintes et de fonctionnalités que le système doit satisfaire.
+
+\subsection{La Couche de Données}
+La première étape cruciale est la constitution de la bibliothèque numérique. Les exigences sont les suivantes :
+\begin{itemize}
+    \item \textbf{Volume} : La bibliothèque doit contenir un minimum de \textbf{1664 livres}. Ce chiffre n'est pas anodin ; il garantit que le corpus est suffisamment vaste pour tester la robustesse des algorithmes de recherche et de recommandation.
+    \item \textbf{Taille des documents} : Chaque livre doit avoir une longueur minimale de \textbf{10 000 mots}. Cette contrainte assure que les documents ont une substance suffisante pour que l'analyse textuelle (fréquence des mots, similarité) soit pertinente.
+    \item \textbf{Format} : Les livres sont stockés sous format textuel brut, facilitant ainsi leur traitement par des algorithmes de Traitement Automatique du Langage Naturel (TALN).
+\end{itemize}
+
+\subsection{Fonctionnalités Principales}
+L'application doit offrir une expérience utilisateur riche à travers quatre fonctionnalités majeures :
+
+\begin{enumerate}
+    \item \textbf{Recherche par Mots-clés} : C'est la fonctionnalité de base de tout moteur de recherche. À partir d'une requête utilisateur $S$, le système doit retourner instantanément la liste de tous les documents contenant cette chaîne de caractères. Cette recherche doit s'appuyer sur une table d'indexation pour garantir des temps de réponse rapides, même sur un grand corpus.
+
+    \item \textbf{Recherche Avancée par Expressions Régulières (RegEx)} : Pour les utilisateurs avancés, le système doit permettre des recherches basées sur des motifs complexes. L'utilisateur fournit une expression régulière, et l'application doit identifier les documents contenant des chaînes de caractères correspondant à ce motif. Deux niveaux de granularité sont attendus : la recherche dans l'index (plus rapide mais limitée aux mots indexés) et la recherche dans le texte intégral (plus exhaustive mais potentiellement plus coûteuse en ressources).
+
+    \item \textbf{Classement par Pertinence (Ranking)} : Les résultats de recherche ne doivent pas être affichés de manière aléatoire. Ils doivent être ordonnés selon un critère de pertinence rigoureux. Le projet impose l'exploration de plusieurs métriques, notamment le nombre d'occurrences du mot-clé, mais aussi des mesures plus sophistiquées issues de la théorie des graphes, telles que la centralité (Closeness, Betweenness ou PageRank) au sein du graphe de similarité de Jaccard.
+
+    \item \textbf{Système de Suggestion} : Afin de favoriser la découverte, l'application doit suggérer des ouvrages similaires à ceux trouvés ou consultés. Cette fonctionnalité repose sur la construction d'un graphe de similarité (Graphe de Jaccard) où les nœuds sont les livres et les arêtes représentent une proximité sémantique ou lexicale. Les suggestions peuvent être basées sur le voisinage direct dans ce graphe ou sur des algorithmes de recommandation plus complexes.
+\end{enumerate}
+
+\section{Approche Proposée}
+
+Pour répondre à ces défis, nous avons adopté une approche modulaire et scalable. Notre solution s'articule autour d'une architecture client-serveur moderne.
+
+Le \textbf{Backend}, développé en Python avec le framework FastAPI, assure la logique métier, le traitement des données et l'exposition des API. Il s'appuie sur des bibliothèques performantes comme NetworkX pour l'analyse de graphes et des modules spécialisés pour l'indexation.
+
+Le \textbf{Frontend}, réalisé avec React et TypeScript, offre une interface utilisateur fluide et réactive, adaptée aussi bien aux ordinateurs de bureau qu'aux appareils mobiles, respectant ainsi l'exigence de compatibilité multi-supports.
+
+La \textbf{Persistance des Données} est confiée à PostgreSQL, un système de gestion de base de données relationnelle robuste, capable de gérer efficacement les données structurées (métadonnées des livres) et les structures d'indexation nécessaires à la recherche plein texte.
+
+Dans les chapitres suivants, nous détaillerons l'architecture technique de la solution (Chapitre 2), nous analyserons en profondeur les algorithmes mis en œuvre pour la recherche et le classement (Chapitre 3), et nous présenterons les résultats de nos tests de performance sur le corpus de 1664 livres (Chapitre 4), avant de conclure sur les perspectives d'évolution du projet (Chapitre 5).

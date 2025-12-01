@@ -62,52 +62,41 @@ SearchBook is a powerful search engine and digital library management system des
 
 ## 📥 Data Ingestion
 
-Before you can search, you need to populate the database with books. We provide a powerful CLI tool for this.
+Before you can search, you need to populate the database with books. We provide a CLI tool for this.
 
-### Quick Start
-To load the first 10 books from Project Gutenberg:
+### Quick Start (Project Gutenberg Download)
+To download and index books directly from Project Gutenberg:
 
 ```bash
-# Enter the backend container or run locally if environment is set up
+# Enter the backend container
 docker-compose exec backend bash
 
-# Run the ingestion script
-python ingestion/load_books.py --source gutenberg --start-id 1 --limit 10
+# Run the ingestion wrapper script (handles dependencies and venv)
+# Usage: ./ingestion/run_ingestion.sh [number_of_books]
+./ingestion/run_ingestion.sh 50
 ```
 
-### Full Corpus (Project Requirement)
-To meet the project requirement of a minimum library size of 1664 books:
+### Local Corpus Ingestion
+To ingest books from a local directory (containing `.txt` files):
 
 ```bash
-# Load 1664 books from Gutenberg
-python ingestion/load_books.py --source gutenberg --start-id 1 --limit 1664 --phase all
+# Ensure your local dataset is mounted or available in the container
+# Example: Ingesting from the 'datasets' folder mounted in the container
+python ingestion/load_books.py --path /app/datasets/sample_books
 ```
 
-### Ingestion Phases
-The ingestion process is split into two phases for flexibility:
-
-1.  **Phase 1 (Load)**: Downloads books, processes text, and populates the `books` and `inverted_index` tables.
-2.  **Phase 2 (Compute)**: Calculates Jaccard similarity graphs and Closeness Centrality scores.
-
-You can run them together or separately:
+### Advanced Usage (Direct Python Script)
+If you need more control (e.g., changing start_id), you can run the python script directly:
 
 ```bash
-# Run both phases (default)
-python ingestion/load_books.py --source gutenberg --limit 50 --phase all
-
-# Run only loading
-python ingestion/load_books.py --source gutenberg --limit 50 --phase 1
-
-# Run only computation (after loading more books)
-python ingestion/load_books.py --source gutenberg --phase 2
+python ingestion/load_books.py --start_id 1 --num_texts 50 --min_words 10000
 ```
 
-### Common Options
-- `--source`: `gutenberg` or `local`.
-- `--start-id`: ID to start downloading from (Gutenberg only).
-- `--limit`: Number of books to process.
-- `--min-words`: Minimum word count to include a book (default: 10,000).
-- `--jaccard-threshold`: Minimum similarity score (0-1) to create an edge in the graph.
+### Options
+- `--path`: Path to a local directory containing `.txt` files (e.g., `pg123.txt`). If provided, Gutenberg download is skipped.
+- `--start_id`: Gutenberg ID to start downloading from (default: 1).
+- `--num_texts`: Number of books to process (default: 50).
+- `--min_words`: Minimum word count to include a book (default: 10000).
 
 For a full list of commands and workflows, check `app/QUICK_START.sh`.
 

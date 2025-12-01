@@ -43,8 +43,8 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: deps
-    command: npm run dev -- --host 0.0.0.0 --port 80
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     env_file:
       - .env
     depends_on:

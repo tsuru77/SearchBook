@@ -5,7 +5,7 @@ import re
 import argparse
 import unicodedata
 from nltk.corpus import stopwords
-import networkx as nx
+# import networkx as nx
 from collections import defaultdict
 import time
 import os
@@ -40,14 +40,9 @@ try:
     DEFAULT_STOP_WORDS = STOP_LANGUAGES['english'] 
 except LookupError:
     # Gérer si les données NLTK ne sont pas installées
-    print("ATTENTION: Les données NLTK (stopwords) ne sont pas installées. Tentative de téléchargement...")
-    import nltk
-    nltk.download('stopwords')
-    STOP_LANGUAGES = {
-        'french': set(stopwords.words('french')),
-        'english': set(stopwords.words('english')),
-    }
-    DEFAULT_STOP_WORDS = STOP_LANGUAGES['english']
+    print("ATTENTION: Les données NLTK (stopwords) ne sont pas installées.")
+    STOP_LANGUAGES = {}
+    DEFAULT_STOP_WORDS = set()
 
 # Seuil de similarité Jaccard pour créer une arête dans le graphe
 JACCARD_THRESHOLD = 0.1
@@ -291,7 +286,7 @@ def calculate_graph_metrics(conn : psycopg2_conn, book_token_sets : dict[int, se
     jaccard_inserts = []
 
     adjacency_list = defaultdict(dict)
-    G = nx.Graph()
+    # G = nx.Graph()
     
     # --- 2a. Calcul des similarités Jaccard (N * (N-1) / 2 comparaisons) ---
     print(f"   -> Calcul de {N * (N-1) // 2} paires Jaccard...")
@@ -308,18 +303,18 @@ def calculate_graph_metrics(conn : psycopg2_conn, book_token_sets : dict[int, se
             if jaccard_score >= JACCARD_THRESHOLD:
                 distance = 1.0 - jaccard_score 
                 jaccard_inserts.append((id_a, id_b, jaccard_score)) 
-                G.add_edge(id_a, id_b, weight=distance)
-                # adjacency_list[id_a][id_b] = distance
-                # adjacency_list[id_b][id_a] = distance
+                # G.add_edge(id_a, id_b, weight=distance)
+                adjacency_list[id_a][id_b] = distance
+                adjacency_list[id_b][id_a] = distance
 
     print(f"   -> {len(jaccard_inserts)} arêtes Jaccard > {JACCARD_THRESHOLD} créées.")
     
     # --- 2b. Calcul de la Centralité de Proximité (Closeness) ---
-    # if adjacency_list:
-    if G.number_of_nodes() > 0:
+    if adjacency_list:
+    # if G.number_of_nodes() > 0:
         #closeness_scores = nx.closeness_centrality(G)
-        closeness_scores = nx.closeness_centrality(G, distance='weight')
-        # closeness_scores = graph_algorithms.calculate_closeness_scores(adjacency_list)
+        # closeness_scores = nx.closeness_centrality(G, distance='weight')
+        closeness_scores = graph_algorithms.calculate_closeness_scores(adjacency_list)
     else:
         closeness_scores = {}
         print("   -> Graphe vide, Closeness non calculée.")

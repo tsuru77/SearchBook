@@ -4,12 +4,13 @@ import type { SearchResult } from '../types/api';
 
 type Props = {
   result: SearchResult;
+  sortBy?: 'relevance' | 'centrality';
 };
 
-export function SearchResultCard({ result }: Props) {
+export function SearchResultCard({ result, sortBy = 'relevance' }: Props) {
   const bookId = result.id ?? undefined;
   return (
-    <article className="result-card">
+    <article className="result-card" style={{ border: '2px solid red' }}>
       <div className="result-body-vertical">
         {result.image_url ? (
           <img
@@ -29,12 +30,16 @@ export function SearchResultCard({ result }: Props) {
         </header>
 
         <div className="score-stack">
-          <span className="score-chip">
-            Score: <strong>{result.score?.toFixed(2) ?? '—'}</strong>
-          </span>
-          <span className="score-chip secondary">
-            Centrality: <strong>{result.centrality_score?.toFixed(3) ?? '—'}</strong>
-          </span>
+          {sortBy === 'relevance' && (
+            <span className="score-chip">
+              Relevance Score: <strong>{result.score?.toFixed(2) ?? '—'}</strong>
+            </span>
+          )}
+          {sortBy === 'centrality' && (
+            <span className="score-chip secondary">
+              Centrality: <strong>{result.centrality_score?.toFixed(3) ?? '—'}</strong>
+            </span>
+          )}
         </div>
 
         {/* Snippet removed as per user request */}

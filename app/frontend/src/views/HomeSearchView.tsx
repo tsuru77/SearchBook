@@ -105,7 +105,11 @@ export function HomeSearchView() {
           {results.length === 0 && !isSearching && <p className="muted">No results yet. Try a query.</p>}
           <div className="results-grid">
             {results.map((result) => (
-              <SearchResultCard key={result.id ?? crypto.randomUUID()} result={result} />
+              <SearchResultCard
+                key={result.id ?? crypto.randomUUID()}
+                result={result}
+                sortBy={sortBy}
+              />
             ))}
           </div>
         </div>

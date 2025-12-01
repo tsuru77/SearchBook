@@ -7,10 +7,10 @@ type Props = {
   sortBy?: 'relevance' | 'centrality';
 };
 
-export function SearchResultCard({ result, sortBy = 'relevance' }: Props) {
+export function SearchResultCard({ result, sortBy }: Props) {
   const bookId = result.id ?? undefined;
   return (
-    <article className="result-card" style={{ border: '2px solid red' }}>
+    <article className="result-card">
       <div className="result-body-vertical">
         {result.image_url ? (
           <img

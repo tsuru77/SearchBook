@@ -37,7 +37,7 @@ async def get_book(book_id: str) -> BookResponse:
         title=book["title"],
         author=book["author"],
         language=None,
-        content=book["content"],
+        text=book["content"],
         word_count=book["word_count"],
         centrality_score=None,
         image_url=book.get("image_url"),

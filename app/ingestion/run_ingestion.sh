@@ -28,6 +28,6 @@ pip install requests psycopg2-binary networkx nltk
 
 # 4. Run ingestion script
 echo "Running ingestion script with limit: $LIMIT"
-python load_books.py --num_texts "$LIMIT"
+python load_books.py --num-texts "$LIMIT"
 
 echo "Ingestion complete!"

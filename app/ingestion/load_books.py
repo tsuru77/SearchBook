@@ -317,8 +317,8 @@ def calculate_graph_metrics(conn : psycopg2_conn, book_token_sets : dict[int, se
     # --- 2b. Calcul de la Centralité de Proximité (Closeness) ---
     # if adjacency_list:
     if G.number_of_nodes() > 0:
-        closeness_scores = nx.closeness_centrality(G)
-        # closeness_scores = nx.closeness_centrality(G, distance='weight')
+        #closeness_scores = nx.closeness_centrality(G)
+        closeness_scores = nx.closeness_centrality(G, distance='weight')
         # closeness_scores = graph_algorithms.calculate_closeness_scores(adjacency_list)
     else:
         closeness_scores = {}

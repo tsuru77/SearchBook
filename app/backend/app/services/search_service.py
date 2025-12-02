@@ -35,7 +35,6 @@ async def search_books(query: str, size: int, sort_by: str = 'relevance') -> Sea
             return SearchResponse(total=0, results=[])
         
         # --- OPTIMISATION 1 : Gestion du Tri Statique (Centralité) ---
-        print(sort_by == 'centrality')
         if sort_by == 'centrality':
             
             order_col = 'closeness_score'
@@ -92,21 +91,13 @@ async def search_books(query: str, size: int, sort_by: str = 'relevance') -> Sea
             
             return SearchResponse(total=len(results), results=results)
 
-
         # 2. On récupère toutes les occurrences des tokens de la requête dans l'index inversé
-        books_details = execute_query_all(
+        occurences_books = execute_query_all(
             f"""
-            SELECT 
-                ii.book_id, 
+            SELECT
                 ii.word, 
                 ii.frequency, 
-                b.id, 
-                b.title, 
-                b.author, 
-                b.content AS text, 
-                b.closeness_score,
-                b.image_url,
-                b.publication_year,
+                b.id,
                 b.word_count
             FROM inverted_index ii 
             JOIN books b ON ii.book_id = b.id 
@@ -126,13 +117,11 @@ async def search_books(query: str, size: int, sort_by: str = 'relevance') -> Sea
         )
 
 
-        if not books_details or not rows:
+        if not occurences_books or not rows:
             return SearchResponse(total=0, results=[])
-        print("1. heure : " + str(datetime.datetime.now()))
         # --- STRATÉGIE PAR DÉFAUT : Tri par Pertinence (BM25) ---
         stats = execute_query_one("SELECT COUNT(*) as N, AVG(word_count) as avgdl FROM books")
         # rajouter l'heure
-        print("2. heure : " + str(datetime.datetime.now()))
         if not stats or stats['n'] == 0:
              return SearchResponse(total=0, results=[])
         
@@ -152,11 +141,11 @@ async def search_books(query: str, size: int, sort_by: str = 'relevance') -> Sea
         doc_freqs = {row["word"]: row["doc_freq"] for row in rows}
 
         # 3. Calcul des Scores BM25
-        for row in books_details:  # chaque row = RealDictRow(...)
-            book_id = row["book_id"]
-            word = row["word"]
-            freq = row["frequency"]
-            word_count = row["word_count"]
+        for book in occurences_books:  # chaque row = RealDictRow(...)
+            book_id = book["id"]
+            word = book["word"]
+            freq = book["frequency"]
+            word_count = book["word_count"]
             docs[book_id]["word_count"] = word_count
             docs[book_id]["words"][word] = {
                 "frequency": freq,
@@ -167,14 +156,36 @@ async def search_books(query: str, size: int, sort_by: str = 'relevance') -> Sea
         scores = {}
         for book_id, doc in docs.items():
             scores[book_id] = bm25_model.score_query(doc)
-        print("3. heure : " + str(datetime.datetime.now()))
 
 
         # 4. Formatter et Retourner les résultats
         results: list[SearchResult] = []
 
+        # 1. On prend les IDs des X meilleurs livres (triés par pertinence)
+        # top_ids = [doc_id for doc_id, score in ranked_docs[:size]]
+        ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        # size = min(50, len(ranked))
+        # top_ids = [book_id for book_id, _ in ranked[:size]]
+        top_ids = [book_id for book_id, _ in ranked]
+        placeholders = ", ".join(["%s"] * len(top_ids))
+
+        taille_text = 280
+        books_details = execute_query_all(
+            f"""
+            SELECT 
+                id, 
+                title, 
+                author, 
+                LEFT(content, {taille_text}) AS text, -- OPTIMISATION : PostgreSQL coupe ici
+                image_url
+            FROM books 
+            WHERE id IN ({placeholders})
+            """,
+            tuple(top_ids)
+        )
+
+
         for book in books_details:
-            snippet = book['text'][:280] if book['text'] else ""
             
             results.append(SearchResult(
                 id=str(book['id']),
@@ -182,13 +193,11 @@ async def search_books(query: str, size: int, sort_by: str = 'relevance') -> Sea
                 author=book['author'],
                 score=scores.get(book['id'], 0.0), # BM25 non calculé (la pertinence est implicite par la présence du mot-clé)
                 centrality_score=0.0,
-                image_url=book.get('image_url'),
-                snippet=snippet,
+                image_url=book.get('image_url', ''),
+                snippet=book.get('text', '')
             ))
-        
         # Tri décroissant par score BM25
         results.sort(key=lambda r: r.score, reverse=True)
-        print("4. heure : " + str(datetime.datetime.now()))
 
 
         return SearchResponse(total=len(results), results=results)

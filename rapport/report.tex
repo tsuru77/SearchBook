@@ -10,7 +10,26 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usetikzlibrary{shapes, arrows, positioning, calc, fit, backgrounds, shadows}
+\usetikzlibrary{shapes, arrows, positioning, calc, fit, backgrounds, shadows, shapes.multipart, arrows.meta, shapes.geometric}
+\usepackage{lmodern}
+
+% Définition des couleurs
+\definecolor{softblue}{RGB}{235, 242, 250} % Bleu très clair pour les en-têtes
+\definecolor{darkgray}{RGB}{60, 60, 60}   % Gris foncé pour le texte
+\definecolor{linegray}{RGB}{100, 100, 100} % Gris pour les bordures
+
+% --- Palette de Couleurs Figure 1 ---
+\definecolor{colFrontend}{RGB}{227, 242, 253} % Bleu clair
+\definecolor{colAPI}{RGB}{255, 243, 224}      % Orange clair
+\definecolor{colService}{RGB}{232, 245, 233}  % Vert clair
+\definecolor{colData}{RGB}{243, 229, 245}     % Violet clair
+
+\definecolor{borderFrontend}{RGB}{33, 150, 243}
+\definecolor{borderAPI}{RGB}{255, 152, 0}
+\definecolor{borderService}{RGB}{76, 175, 80}
+\definecolor{borderData}{RGB}{156, 39, 176}
+
+\definecolor{darktext}{RGB}{50, 50, 50}
 \usepackage{titlesec}
 \usepackage{fancyhdr}
 \usepackage{setspace}
@@ -38,8 +57,8 @@
 \setlength{\parskip}{1em}
 
 \title{\textbf{\Huge Rapport de Projet : SearchBook} \\ \vspace{0.5cm} \Large Conception et Implémentation d'un Moteur de Recherche Hybride sur Corpus Littéraire}
-\author{\textbf{Étudiant Master Informatique} \\ Parcours Algorithmique et Web}
-\date{\today}
+\author{\textbf{Léo BOUVARD, Léo BIREBENT} \\ Sorbonne Université}
+\date{}
 
 \begin{document}
 
@@ -91,26 +110,92 @@ Le stockage des données est confié à \textbf{PostgreSQL}. Plus qu'un simple s
 
 \begin{figure}[h]
 \centering
-\begin{tikzpicture}[node distance=2.5cm, auto, >=stealth]
-    % Styles
-    \tikzstyle{block} = [rectangle, draw, fill=blue!10, text width=3cm, text centered, rounded corners, minimum height=1.5cm, drop shadow]
-    \tikzstyle{db} = [cylinder, shape border rotate=90, draw, fill=gray!10, aspect=0.25, minimum height=1.5cm, minimum width=2cm, drop shadow]
-    \tikzstyle{line} = [draw, thick, ->]
+\begin{tikzpicture}[
+    node distance=1.5cm and 2cm,
+    font=\sffamily\small,
+    % Styles des boîtes
+    base/.style={
+        draw, 
+        thick, 
+        rounded corners=3pt, 
+        align=center, 
+        minimum height=1cm, 
+        minimum width=3.5cm,
+        text=darktext,
+        drop shadow={opacity=0.15, shadow xshift=1mm, shadow yshift=-1mm}
+    },
+    frontend/.style={base, fill=colFrontend, draw=borderFrontend},
+    api/.style={base, fill=colAPI, draw=borderAPI},
+    service/.style={base, fill=colService, draw=borderService, minimum width=3cm},
+    data/.style={base, fill=colData, draw=borderData, shape=cylinder, shape border rotate=90, aspect=0.25, minimum height=1.5cm},
+    % Styles des flèches
+    connector/.style={
+        -{Stealth[scale=1.1]}, 
+        thick, 
+        draw=darktext!70,
+        rounded corners=5pt
+    },
+    labeltext/.style={
+        font=\sffamily\scriptsize\itshape, 
+        text=darktext!80,
+        midway,
+        fill=white,
+        inner sep=1pt
+    }
+]
 
-    % Nodes
-    \node [block, fill=green!20] (client) {Client Web \\ (React/TS)};
-    \node [block, fill=orange!20, below of=client] (api) {API Gateway \\ (FastAPI)};
-    \node [block, fill=yellow!20, below left of=api, node distance=4cm] (service_search) {Service Recherche \\ (BM25 / Regex)};
-    \node [block, fill=yellow!20, below right of=api, node distance=4cm] (service_graph) {Service Graphe \\ (Jaccard / Centralité)};
-    \node [db, below of=api, node distance=4cm] (database) {PostgreSQL};
+    % --- 1. Frontend Layer ---
+    \node[frontend] (client) {
+        \textbf{Client Web}\\
+        (React / TypeScript)
+    };
 
-    % Edges
-    \path [line] (client) -- node {HTTP / JSON} (api);
-    \path [line] (api) -- (client);
-    \path [line] (api) -- (service_search);
-    \path [line] (api) -- (service_graph);
-    \path [line] (service_search) -- node [left] {SQL} (database);
-    \path [line] (service_graph) -- node [right] {SQL} (database);
+    % --- 2. API Layer ---
+    \node[api, below=of client] (gateway) {
+        \textbf{API Gateway}\\
+        (FastAPI)
+    };
+
+    % --- 3. Services Layer ---
+    % On place les services côte à côte sous l'API
+    \node[service, below left=1.5cm and -0.5cm of gateway] (search) {
+        \textbf{Service Recherche}\\
+        (BM25 / Regex)
+    };
+
+    \node[service, below right=1.5cm and -0.5cm of gateway] (graph) {
+        \textbf{Service Graphe}\\
+        (Jaccard / Centralité)
+    };
+
+    % --- 4. Data Layer ---
+    % La DB centrée sous les services
+    % On calcule le point médian entre les deux services pour centrer la DB
+    \coordinate (middleServices) at ($(search.south)!0.5!(graph.south)$);
+    \node[data, below=1.5cm of middleServices] (db) {
+        \textbf{PostgreSQL}\\
+        (Data \& Index)
+    };
+
+    % --- Connexions ---
+
+    % Client -> API
+    \draw[connector] (client) -- node[labeltext] {HTTP / REST} (gateway);
+
+    % API -> Services
+    \draw[connector] (gateway.south) -- ++(0,-0.5) -| (search.north);
+    \draw[connector] (gateway.south) -- ++(0,-0.5) -| (graph.north);
+
+    % Services -> DB
+    \draw[connector] (search.south) -- node[labeltext, right=0.1cm] {SQL / Text Search} (db.north west);
+    \draw[connector] (graph.south) -- node[labeltext, left=0.1cm] {SQL / Graph Data} (db.north east);
+
+    % --- Background Layers (Optionnel pour regrouper visuellement) ---
+    \begin{scope}[on background layer]
+        % Cadre Frontend
+        %\node[fit=(client), fill=colFrontend!30, rounded corners, draw=none] {};
+    \end{scope}
+
 \end{tikzpicture}
 \caption{Architecture détaillée des services}
 \end{figure}
@@ -119,7 +204,7 @@ Le stockage des données est confié à \textbf{PostgreSQL}. Plus qu'un simple s
 Le périmètre fonctionnel couvre les besoins essentiels d'un moteur de recherche moderne :
 
 \begin{enumerate}
-    \item \textbf{Recherche Full-Text (BM25)} : "En tant qu'utilisateur, je veux trouver des livres en tapant des mots-clés, même si je ne connais pas le titre exact." C'est la fonctionnalité cœur. L'algorithme doit gérer les synonymes (via le stemming, si implémenté) et classer les résultats par pertinence.
+    \item \textbf{Recherche Full-Text (BM25)} : "En tant qu'utilisateur, je veux trouver des livres en tapant des mots-clés, même si je ne connais pas le titre exact." C'est la fonctionnalité cœur. L'algorithme classe les résultats par pertinence.
     \item \textbf{Recherche Structurelle (Regex)} : "En tant que chercheur, je veux identifier des motifs spécifiques (ex: dates, noms propres composés) dans le corpus." Cette fonctionnalité s'adresse à un public expert capable de formuler des expressions régulières.
     \item \textbf{Recommandation (Suggestions)} : "En tant que lecteur, je veux découvrir des livres similaires à celui que je consulte." Le système utilise le graphe de similarité pour proposer des lectures connexes.
     \item \textbf{Tri par Centralité} : "Je veux voir les livres les plus influents du corpus." Le tri par centralité permet de faire remonter les œuvres qui partagent le plus de vocabulaire avec le reste de la bibliothèque.
@@ -162,26 +247,53 @@ Cette table représente les arêtes du graphe de similarité.
 
 \begin{figure}[h]
 \centering
-\begin{tikzpicture}[node distance=1.5cm]
-    \node (book) [draw, rectangle, rounded corners, minimum width=4cm, minimum height=2cm] {
-        \textbf{Table: books} \\
-        \hrule
-        PK: id \\
-        title, author \\
-        content (TEXT) \\
-        word\_count (INT)
+\begin{tikzpicture}[
+    node distance=4cm, % Distance entre les tables
+    font=\sffamily,    % Police sans-serif pour un look technique
+    % Style des tables (Entités)
+    table/.style={
+        draw=linegray,
+        thick,
+        rectangle split,
+        rectangle split parts=2,
+        rectangle split part fill={softblue, white},
+        align=left,
+        rounded corners=2pt,
+        drop shadow={opacity=0.15, shadow xshift=1mm, shadow yshift=-1mm}
+    }
+]
+
+    % --- Table 1 : Books (Gauche) ---
+    \node[table] (books) {
+        \textbf{books} % En-tête (Partie 1)
+        \nodepart{second} % Corps (Partie 2)
+        \begin{tabular}{@{}l l@{}}
+            \textbf{id} & \textit{\scriptsize (PK)} \\
+            title & \\
+            author & \\
+            content & \\
+            word\_count &
+        \end{tabular}
     };
-    
-    \node (index) [draw, rectangle, rounded corners, right=of book, minimum width=4cm, minimum height=2cm] {
-        \textbf{Table: inverted\_index} \\
-        \hrule
-        PK: id \\
-        word (INDEXED) \\
-        FK: book\_id \\
-        frequency
+
+    % --- Table 2 : Inverted Index (Droite) ---
+    \node[table, right=of books] (index) {
+        \textbf{inverted\_index}
+        \nodepart{second}
+        \begin{tabular}{@{}l l@{}}
+            \textbf{book\_id} & \textit{\scriptsize (PK, FK)} \\
+            \textbf{word} & \textit{\scriptsize (PK)} \\
+            frequency &
+        \end{tabular}
     };
-    
-    \draw[->, thick] (index) -- node[above] {Référence} (book);
+
+    % --- Flèche relationnelle ---
+    % De l'index vers les livres (Référence FK)
+    \draw[-{Stealth[scale=1.2]}, thick, color=darkgray] 
+        (index.west) -- 
+        node[midway, above, font=\small\itshape, text=darkgray, yshift=2pt] {Référence} 
+        (books.east);
+
 \end{tikzpicture}
 \caption{Relation Index Inversé - Livres}
 \end{figure}
@@ -193,51 +305,33 @@ Cette table représente les arêtes du graphe de similarité.
 La qualité d'un moteur de recherche se mesure à sa capacité à retourner les documents les plus pertinents en premier. Nous avons implémenté et comparé deux approches.
 
 \subsection{Recherche Probabiliste : Le Modèle BM25}
-Pour la recherche par mots-clés, nous avons choisi l'algorithme \textbf{Okapi BM25} (Best Matching 25). C'est l'état de l'art pour les modèles de type "Bag of Words", surpassant largement les approches booléennes ou TF-IDF classiques.
-
-\subsubsection{Fondements Théoriques}
-BM25 améliore TF-IDF sur deux points majeurs :
+\subsubsection{Principe de Fonctionnement}
+BM25 est une amélioration du classique TF-IDF. Il repose sur deux principes clés pour calculer la pertinence d'un document par rapport à une requête :
 \begin{enumerate}
-    \item \textbf{Saturation de la Fréquence (Term Frequency Saturation)} : Dans TF-IDF, le score augmente linéairement avec la fréquence du mot. Or, voir un mot 100 fois n'est pas 100 fois plus pertinent que de le voir 1 fois. BM25 introduit une courbe de saturation asymptotique contrôlée par le paramètre $k_1$.
-    \item \textbf{Normalisation de Longueur (Document Length Normalization)} : Un document très long a statistiquement plus de chances de contenir n'importe quel mot. BM25 pénalise les documents longs pour éviter qu'ils ne monopolisent les résultats, via le paramètre $b$.
+    \item \textbf{Saturation de la Fréquence} : Contrairement à une approche naïve où le score augmenterait indéfiniment avec le nombre d'occurrences d'un mot, BM25 applique une saturation. Au-delà d'un certain seuil, répéter le même mot n'apporte plus de gain significatif de pertinence.
+    \item \textbf{Normalisation de Longueur} : Les documents longs ont naturellement plus de chances de contenir les mots recherchés. BM25 pénalise légèrement ces documents pour éviter qu'ils ne dominent injustement les résultats face à des textes plus courts et concis.
 \end{enumerate}
 
-\subsubsection{Formulation Mathématique Détaillée}
-Le score d'un document $D$ pour une requête $Q$ est calculé comme suit :
-
-\[
-\text{Score}(D, Q) = \sum_{q \in Q} \text{IDF}(q) \cdot \frac{f(q, D) \cdot (k_1 + 1)}{f(q, D) + k_1 \cdot (1 - b + b \cdot \frac{|D|}{\text{avgdl}})}
-\]
-
-Avec :
-\begin{itemize}
-    \item $\text{IDF}(q) = \ln\left(\frac{N - n(q) + 0.5}{n(q) + 0.5} + 1\right)$ : L'Inverse Document Frequency probabiliste. Elle donne un poids élevé aux mots rares (discriminants) et un poids faible aux mots courants (stop words).
-    \item $k_1 = 1.5$ : Paramètre empirique standard.
-    \item $b = 0.75$ : Paramètre de normalisation standard.
-\end{itemize}
-
-\subsubsection{Implémentation Hybride (SQL + Python)}
-Notre implémentation dans \texttt{search\_service.py} tire parti de la puissance de SQL pour l'agrégation et de Python pour le calcul scientifique.
+\subsubsection{Implémentation et Pré-traitement}
+Notre implémentation combine SQL et Python. Une phase cruciale est le \textbf{pré-traitement} des textes, appliqué à la fois lors de l'ingestion des livres et lors du traitement de la requête utilisateur :
 \begin{enumerate}
-    \item \textbf{Pré-traitement} : La requête utilisateur est tokenisée (minuscules, découpage).
-    \item \textbf{Récupération (Fetch)} : Une requête SQL avec jointure récupère les fréquences pour tous les mots de la requête en interrogeant la table \texttt{inverted\_index} et en joignant avec \texttt{books}.
-    \item \textbf{Calcul (Compute)} : Le backend Python itère sur ces résultats pour calculer le score BM25 de chaque document candidat.
-    \item \textbf{Classement (Rank)} : La liste finale est triée par score décroissant.
+    \item \textbf{Tokenisation} : Le texte brut est découpé en mots (tokens).
+    \item \textbf{Normalisation} : Tous les mots sont convertis en minuscules pour assurer une correspondance insensible à la casse.
+    \item \textbf{Filtrage} : La ponctuation est retirée.
 \end{enumerate}
 
-\subsection{Recherche Avancée : Expressions Régulières}
-La recherche par regex répond à un besoin différent : la recherche de motifs syntaxiques précis (ex: \texttt{Mme\.\s[A-Z][a-z]+}).
+Ensuite, le processus de recherche suit ces étapes :
+\begin{enumerate}
+    \item \textbf{Récupération} : Une requête SQL extrait les fréquences des mots de la requête dans les documents candidats.
+    \item \textbf{Calcul} : Le score BM25 est calculé en Python pour chaque livre.
+    \item \textbf{Classement} : Les résultats sont triés par score décroissant.
+\end{enumerate}
 
-\subsubsection{Stratégie d'Implémentation}
-Contrairement à la recherche par mots-clés qui utilise un index, la recherche regex est intrinsèquement difficile à indexer car le motif peut être arbitrairement complexe.
-Nous avons opté pour une approche de \textbf{filtrage applicatif} :
-1.  Chargement du contenu de \textbf{tous} les livres en mémoire (ou par lots).
-2.  Compilation du regex avec le module \texttt{re} de Python.
-3.  Application du prédicat \texttt{pattern.search()} sur chaque texte.
+\subsection{Recherche Structurelle : Expressions Régulières}
+La recherche par expressions régulières (Regex) permet d'identifier des motifs précis dans le texte (dates, formes spécifiques, etc.), ce que ne permet pas une recherche par mots-clés classique.
 
-\subsubsection{Critique et Limites}
-Cette approche a une complexité temporelle en $O(N \cdot L)$, où $L$ est la longueur moyenne d'un livre. Elle est acceptable pour notre corpus de 1600 livres (quelques centaines de millisecondes), mais ne passerait pas à l'échelle sur des millions de documents.
-Une alternative plus performante aurait été d'utiliser les index \textbf{Trigrammes} (\texttt{pg\_trgm}) de PostgreSQL, qui permettent d'accélérer les recherches de motifs textuels directement dans la base de données.
+\subsubsection{Approche}
+Contrairement à la recherche BM25 qui utilise l'index inversé, la recherche par regex nécessite d'analyser le contenu textuel. Nous chargeons le texte des livres et appliquons le motif recherché. Bien que plus coûteuse en ressources que l'utilisation d'un index, cette méthode offre une flexibilité totale pour des recherches complexes sur la structure du texte.
 
 \newpage
 
@@ -389,16 +483,13 @@ Sur le plan technique, nous avons réussi à :
 \end{itemize}
 
 \subsection{Perspectives d'Évolution}
-Pour passer d'un prototype académique à un système de production capable de gérer des millions de livres, plusieurs axes d'amélioration sont identifiés :
+Pour passer d'un prototype à un système à plus grande échelle, plusieurs pistes sont envisageables :
 
-\subsubsection{Optimisation du Graphe (Passage à l'échelle)}
-Le calcul quadratique du graphe de similarité est le principal frein à la scalabilité. L'utilisation d'algorithmes de \textbf{Locality Sensitive Hashing (LSH)} comme MinHash permettrait de détecter les paires de documents similaires avec une complexité sous-linéaire, évitant la comparaison exhaustive $N \times N$.
+\subsubsection{Optimisation du Graphe}
+Le calcul actuel du graphe de similarité compare chaque livre à tous les autres, ce qui devient très long quand le nombre de livres augmente. Des algorithmes d'approximation permettraient de détecter les livres similaires beaucoup plus rapidement sans avoir à tout comparer.
 
-\subsubsection{Indexation Avancée}
-L'implémentation manuelle de l'index inversé, bien que pédagogique, ne bénéficie pas de toutes les optimisations bas niveau d'un moteur dédié. La migration vers les types \texttt{tsvector} de PostgreSQL ou vers un moteur spécialisé comme \textbf{Elasticsearch} ou \textbf{Meilisearch} offrirait des gains de performance, ainsi que des fonctionnalités supplémentaires (correction orthographique, recherche floue).
-
-\subsubsection{Enrichissement Sémantique}
-Actuellement, la similarité est basée sur la co-occurrence exacte des mots. L'utilisation de modèles de plongement lexical (Word Embeddings) comme \textbf{Word2Vec} ou \textbf{BERT} permettrait de capturer la similarité sémantique (ex: "roi" et "reine") même sans vocabulaire commun, améliorant ainsi la qualité des suggestions.
+\subsubsection{Indexation et Sémantique}
+L'utilisation de solutions d'indexation plus avancées permettrait d'accélérer encore la recherche. De plus, l'intégration de modèles de langage modernes permettrait de comprendre le sens des mots (sémantique) au-delà de leur simple orthographe, améliorant ainsi la pertinence des suggestions.
 
 \vspace{2cm}
 \noindent Ce projet a été une opportunité unique de comprendre les compromis inhérents à la conception de systèmes distribués : entre précision et rappel, entre temps de calcul offline et latence online, et entre complexité algorithmique et maintenabilité du code.

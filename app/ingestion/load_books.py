@@ -188,7 +188,6 @@ def _process_and_insert_book(cursor, content : str, gutenberg_id : int, min_word
         """)
     
     conn.commit()
-    print(f"   -> Livre ID {book_id} indexé et enregistré.")
     return True # Indique le succès
 
 def ingest_and_index_books_from_directory(conn : psycopg2_conn, directory_path : str, min_words : int) -> dict[int, set[str]]: 

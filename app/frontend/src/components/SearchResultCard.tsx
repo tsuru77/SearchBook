@@ -32,12 +32,12 @@ export function SearchResultCard({ result, sortBy }: Props) {
         <div className="score-stack">
           {sortBy === 'relevance' && (
             <span className="score-chip">
-              Relevance Score: <strong>{result.score?.toFixed(2) ?? '—'}</strong>
+              BM25: <strong>{result.score?.toFixed(2) ?? '—'}</strong>
             </span>
           )}
           {sortBy === 'centrality' && (
             <span className="score-chip secondary">
-              Centrality: <strong>{result.centrality_score?.toFixed(3) ?? '—'}</strong>
+              Score de centralité (closeness): <strong>{result.centrality_score?.toFixed(3) ?? '—'}</strong>
             </span>
           )}
         </div>

@@ -84,8 +84,8 @@ export function HomeSearchView() {
             }}
             style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border)' }}
           >
-            <option value="relevance">Relevance</option>
-            <option value="centrality">Centrality</option>
+            <option value="relevance">BM25</option>
+            <option value="centrality">Score de centralité (closeness)</option>
           </select>
         </label>
       </div>

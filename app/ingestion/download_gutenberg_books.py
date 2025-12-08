@@ -5,8 +5,8 @@ import time
 
 # --- CONFIGURATION ---
 GUTENBERG_URL_TEMPLATE = "https://www.gutenberg.org/cache/epub/{id}/pg{id}.txt"
-DEFAULT_START_ID = 201
-DEFAULT_NUM_BOOKS = 300
+DEFAULT_START_ID = 1
+DEFAULT_NUM_BOOKS = 2000
 OUTPUT_DIR = "livres"
 # --- FIN CONFIGURATION ---
 

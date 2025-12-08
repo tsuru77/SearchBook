@@ -78,9 +78,11 @@ export function AdvancedRegexView() {
               Showing matches for <strong>/{regex}/</strong>
             </p>
           )}
-          {results.map((result) => (
-            <SearchResultCard key={result.id ?? crypto.randomUUID()} result={result} />
-          ))}
+          <div className="results-grid">
+            {results.map((result) => (
+              <SearchResultCard key={result.id ?? crypto.randomUUID()} result={result} />
+            ))}
+          </div>
           {!results.length && !isSearching && <p className="muted">No matches yet.</p>}
         </div>
 

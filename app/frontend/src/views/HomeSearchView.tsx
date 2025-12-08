@@ -84,8 +84,8 @@ export function HomeSearchView() {
             }}
             style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border)' }}
           >
-            <option value="relevance">Relevance</option>
-            <option value="centrality">Centrality</option>
+            <option value="relevance">BM25</option>
+            <option value="centrality">Score de centralité (closeness)</option>
           </select>
         </label>
       </div>
@@ -105,7 +105,11 @@ export function HomeSearchView() {
           {results.length === 0 && !isSearching && <p className="muted">No results yet. Try a query.</p>}
           <div className="results-grid">
             {results.map((result) => (
-              <SearchResultCard key={result.id ?? crypto.randomUUID()} result={result} />
+              <SearchResultCard
+                key={result.id ?? crypto.randomUUID()}
+                result={result}
+                sortBy={sortBy}
+              />
             ))}
           </div>
         </div>

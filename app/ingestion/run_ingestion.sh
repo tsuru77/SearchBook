@@ -27,7 +27,19 @@ echo "Installing dependencies..."
 pip install requests psycopg2-binary networkx nltk
 
 # 4. Run ingestion script
-echo "Running ingestion script with limit: $LIMIT"
-python load_books.py --num_texts "$LIMIT"
+# 4. Run ingestion script
+if [[ "$1" =~ ^[0-9]+$ ]]; then
+    # Backward compatibility: if first arg is a number, treat as limit
+    echo "Running ingestion script with limit: $1"
+    python load_books.py --num-texts "$1"
+elif [ -z "$1" ]; then
+    # No arguments: use default limit
+    echo "Running ingestion script with default limit: $DEFAULT_LIMIT"
+    python load_books.py --num-texts "$DEFAULT_LIMIT"
+else
+    # Arguments provided: pass them directly to the script
+    echo "Running ingestion script with args: $@"
+    python load_books.py "$@"
+fi
 
 echo "Ingestion complete!"

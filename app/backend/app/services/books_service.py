@@ -20,7 +20,7 @@ async def get_book(book_id: str) -> BookResponse:
         execute_query("SELECT increment_book_click(%s)", (int(book_id),), commit=True)
 
         book = execute_query_one(
-            "SELECT id, title, author, content AS text, word_count, image_url FROM books WHERE id = %s",
+            "SELECT id, title, author, content, word_count, image_url FROM books WHERE id = %s",
             (int(book_id),)
         )
     except ValueError:
@@ -32,13 +32,15 @@ async def get_book(book_id: str) -> BookResponse:
         raise BookServiceError("Book not found", status.HTTP_404_NOT_FOUND)
     
     return BookResponse(
-        id=str(book['id']),
-        title=book['title'],
-        author=book['author'],
-        text=book['text'],
-        word_count=book['word_count'],
+        id=str(book["id"]),
+        gutenberg_id=None,
+        title=book["title"],
+        author=book["author"],
+        language=None,
+        text=book["content"],
+        word_count=book["word_count"],
         centrality_score=None,
-        image_url=book.get('image_url'),
+        image_url=book.get("image_url"),
         metadata={},
     )
 

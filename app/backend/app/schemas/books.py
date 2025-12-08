@@ -7,7 +7,7 @@ class BookResponse(BaseModel):
     title: str | None
     author: str | None
     language : str | None
-    content: str | None
+    text: str | None
     word_count: int | None
     centrality_score: float | None
     image_url: str | None = None
